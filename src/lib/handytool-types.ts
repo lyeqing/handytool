@@ -46,7 +46,7 @@ export interface FieldDefinition {
 
 export interface ObjectDefinition {
   id: number;
-  ownerId: number;
+  userId: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -58,7 +58,7 @@ export interface ObjectDefinition {
 export interface ObjectRecord {
   id: number;
   objectDefinitionId: number;
-  ownerId: number;
+  userId: number;
   title: string;
   description: string;
   values: Record<string, unknown>;

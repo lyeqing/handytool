@@ -21,11 +21,12 @@ function seedUid() {
   return () => `seed-${++n}`;
 }
 
-export function SchemaBuilder() {
+export function SchemaBuilder({ locale }: { locale: string }) {
+  // bind, so the server action redirects into the language the reader is already in.
   const [state, submit, pending] = useActionState<
     SchemaFormState | null,
     SchemaDraft
-  >(createSchemaAction, null);
+  >(createSchemaAction.bind(null, locale), null);
 
   const [draft, setDraft] = useState<SchemaDraft>(() =>
     customerSchemaDraft(seedUid()),

@@ -13,6 +13,7 @@ export interface SchemaFormState {
 }
 
 export async function createSchemaAction(
+  locale: string,
   _previous: SchemaFormState | null,
   draft: SchemaDraft,
 ): Promise<SchemaFormState> {
@@ -29,6 +30,6 @@ export async function createSchemaAction(
     };
   }
 
-  // The schema exists - go straight to adding an instance of it.
-  redirect(`/schemas/${result.data.id}/records/new`);
+  // The schema exists - go straight to adding an instance of it, staying in the same language.
+  redirect(`/${locale}/schemas/${result.data.id}/records/new`);
 }

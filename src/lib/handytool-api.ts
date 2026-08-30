@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type {
   ObjectDefinition,
   ObjectRecord,
@@ -7,15 +8,16 @@ import type {
 /**
  * Server-side client for the handytool-api backend.
  *
- * Everything here runs on the Next.js server (Server Components and Server Actions), so the browser
- * never talks to the .NET API directly. That keeps the ownership header off the client and means the
- * API needs no CORS configuration.
+ * Everything here runs on the Next.js server (Server Components and Server Actions). It uses an
+ * absolute URL because server code has no origin to be relative to - the browser's same-origin
+ * /api/* path only applies to calls the browser makes itself.
+ *
+ * Authentication rides on the request's own cookies. The session token is HttpOnly, so this is the
+ * only place that can see it: page scripts cannot read it, and it never has to be handed to the
+ * browser in a form JavaScript could steal.
  */
 
 const API_URL = process.env.HANDYTOOL_API_URL ?? "http://localhost:5292";
-
-/** Placeholder ownership until the API has real authentication - see Security/CurrentOwner.cs. */
-const OWNER_ID = process.env.HANDYTOOL_OWNER_ID ?? "25";
 
 export type ApiResult<T> =
   | { ok: true; data: T }
@@ -26,6 +28,25 @@ export type ApiResult<T> =
       /** Present when the API returned its structured validation envelope. */
       problem: ValidationErrorResponse | null;
     };
+
+/**
+ * Passes the caller's session and visitor cookies through to the API.
+ *
+ * Without this a server-rendered page would reach the API anonymous, and every request would come
+ * back 401 even though the person is signed in.
+ */
+async function forwardedCookies(): Promise<Record<string, string>> {
+  const store = await cookies();
+
+  const forwarded = ["session_token", "visitor_id"]
+    .map((name) => {
+      const value = store.get(name)?.value;
+      return value ? `${name}=${value}` : null;
+    })
+    .filter((pair): pair is string => pair !== null);
+
+  return forwarded.length > 0 ? { Cookie: forwarded.join("; ") } : {};
+}
 
 async function request<T>(
   path: string,
@@ -38,7 +59,7 @@ async function request<T>(
       ...init,
       headers: {
         "Content-Type": "application/json",
-        "X-Owner-Id": OWNER_ID,
+        ...(await forwardedCookies()),
         ...init?.headers,
       },
       cache: "no-store",
@@ -50,6 +71,15 @@ async function request<T>(
       message: `Could not reach the API at ${API_URL}. Start it with "dotnet run" in the handytool-api project. (${
         error instanceof Error ? error.message : String(error)
       })`,
+      problem: null,
+    };
+  }
+
+  if (response.status === 401) {
+    return {
+      ok: false,
+      status: 401,
+      message: "Sign in to see this.",
       problem: null,
     };
   }
@@ -102,14 +132,30 @@ function summarise(body: string, status: number): string {
     : trimmed;
 }
 
-export function listDefinitions(): Promise<ApiResult<ObjectDefinition[]>> {
-  return request<ObjectDefinition[]>("/api/object-definitions");
+/**
+ * The API resolves every label into one language before returning it, so the caller never deals with
+ * translation maps. Passing the locale explicitly beats letting it fall back to Accept-Language:
+ * these calls come from the Next server, whose header is not the reader's.
+ */
+export function listDefinitions(
+  language?: string,
+): Promise<ApiResult<ObjectDefinition[]>> {
+  return request<ObjectDefinition[]>(withLanguage("/api/object-definitions", language));
 }
 
 export function getDefinition(
   id: number,
+  language?: string,
 ): Promise<ApiResult<ObjectDefinition>> {
-  return request<ObjectDefinition>(`/api/object-definitions/${id}`);
+  return request<ObjectDefinition>(
+    withLanguage(`/api/object-definitions/${id}`, language),
+  );
+}
+
+function withLanguage(path: string, language?: string): string {
+  if (!language) return path;
+
+  return `${path}${path.includes("?") ? "&" : "?"}lang=${encodeURIComponent(language)}`;
 }
 
 export function createDefinition(

@@ -1,0 +1,47 @@
+{
+  "site": {
+    "title": "HandyTool",
+    "tagline": "下面的每个模型都是元数据。所有模型的记录共用一张表和一个 C# 实体。"
+  },
+  "nav": {
+    "language": "语言",
+    "allSchemas": "← 返回模型列表"
+  },
+  "home": {
+    "createSchema": "新建模型",
+    "noSchemas": "还没有模型。",
+    "addInstance": "添加记录",
+    "noDescription": "暂无描述。"
+  },
+  "schemaNew": {
+    "title": "新建模型",
+    "intro": "这里设计的是 ObjectDefinition 及其字段。不会创建任何数据表或 C# 类——模型只是元数据行，之后添加的每条记录都会以 jsonb 的形式存入共用的 ObjectRecords 表。表单已预填了一个客户示例，可以随意修改或删除。"
+  },
+  "recordNew": {
+    "title": "添加{name}",
+    "noDescription": "暂无描述。",
+    "meta": "模型 #{id} · {count} 个字段 · 下面的表单由字段定义自动生成，并非手工编写。",
+    "invalidId": "“{id}”不是有效的模型编号。",
+    "notFound": "当前账号下没有编号为 {id} 的模型。"
+  },
+  "errors": {
+    "signIn": "请登录后查看。",
+    "generic": "出现了一些问题。",
+    "required": "{field}为必填项。",
+    "too_short": "{field}太短。",
+    "too_long": "{field}太长。",
+    "invalid_type": "{field}的类型不正确。",
+    "invalid_format": "{field}的格式不正确。",
+    "below_minimum": "{field}小于最小值。",
+    "above_maximum": "{field}大于最大值。",
+    "invalid_step": "{field}不是允许的步长。",
+    "unknown_option": "{field}不在允许的选项中。",
+    "duplicate_option": "{field}中有重复的选项。",
+    "unknown_field": "{field}不是该模型的字段。",
+    "too_few_items": "{field}的项目太少。",
+    "too_many_items": "{field}的项目太多。",
+    "values_not_object": "值必须是一个 JSON 对象。",
+    "duplicate_name": "该名称已被使用。",
+    "duplicate_key": "该字段键重复使用了。"
+  }
+}

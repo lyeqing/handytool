@@ -1,26 +1,43 @@
 import Link from "next/link";
 import { getDefinition } from "@/lib/handytool-api";
 import { RecordForm } from "./record-form";
+import { getDictionary, type Dictionary } from "@/i18n/get-dictionary";
+import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 
 export default async function NewRecordPage(
-  props: PageProps<"/schemas/[id]/records/new">,
+  props: PageProps<"/[lang]/schemas/[id]/records/new">,
 ) {
-  const { id } = await props.params;
+  const { lang, id } = await props.params;
+  const locale = isLocale(lang) ? lang : defaultLocale;
+  const t = getDictionary(locale);
+
   const definitionId = Number(id);
 
   if (!Number.isInteger(definitionId) || definitionId <= 0) {
-    return <Problem message={`"${id}" is not a valid schema id.`} />;
+    return (
+      <Problem
+        locale={locale}
+        t={t}
+        message={t.recordNew.invalidId.replace("{id}", id)}
+      />
+    );
   }
 
-  const result = await getDefinition(definitionId);
+  // Field labels and dropdown option labels come back already resolved for this language, so the
+  // generated form below is translated without knowing that translations exist.
+  const result = await getDefinition(definitionId, locale);
 
   if (!result.ok) {
     return (
       <Problem
+        locale={locale}
+        t={t}
         message={
           result.status === 404
-            ? `No schema with id ${definitionId} for this owner.`
-            : result.message
+            ? t.recordNew.notFound.replace("{id}", String(definitionId))
+            : result.status === 401
+              ? t.errors.signIn
+              : result.message
         }
       />
     );
@@ -32,22 +49,22 @@ export default async function NewRecordPage(
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       <Link
-        href="/"
+        href={`/${locale}`}
         className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
       >
-        ← All schemas
+        {t.nav.allSchemas}
       </Link>
 
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-        Add a {definition.name}
+        {t.recordNew.title.replace("{name}", definition.name)}
       </h1>
       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        {definition.description || "No description."}
+        {definition.description || t.recordNew.noDescription}
       </p>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
-        Schema #{definition.id} · {fields.length} field
-        {fields.length === 1 ? "" : "s"} · the form below is generated from the
-        field definitions, not hand-written.
+        {t.recordNew.meta
+          .replace("{id}", String(definition.id))
+          .replace("{count}", String(fields.length))}
       </p>
 
       <div className="mt-8">
@@ -57,14 +74,22 @@ export default async function NewRecordPage(
   );
 }
 
-function Problem({ message }: { message: string }) {
+function Problem({
+  locale,
+  t,
+  message,
+}: {
+  locale: Locale;
+  t: Dictionary;
+  message: string;
+}) {
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       <Link
-        href="/"
+        href={`/${locale}`}
         className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
       >
-        ← All schemas
+        {t.nav.allSchemas}
       </Link>
       <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
         {message}

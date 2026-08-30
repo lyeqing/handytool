@@ -1,0 +1,47 @@
+{
+  "site": {
+    "title": "HandyTool",
+    "tagline": "Every schema below is metadata. Records of all of them share one table and one C# entity."
+  },
+  "nav": {
+    "language": "Language",
+    "allSchemas": "← All schemas"
+  },
+  "home": {
+    "createSchema": "Create a schema",
+    "noSchemas": "No schemas yet.",
+    "addInstance": "Add instance",
+    "noDescription": "No description."
+  },
+  "schemaNew": {
+    "title": "Create a schema",
+    "intro": "This designs an ObjectDefinition and its fields. No table and no C# class is created — the schema is just metadata rows, and every record you add later lands in the shared ObjectRecords table as jsonb. The form is pre-filled with a Customer example; edit or delete anything."
+  },
+  "recordNew": {
+    "title": "Add a {name}",
+    "noDescription": "No description.",
+    "meta": "Schema #{id} · {count} fields · the form below is generated from the field definitions, not hand-written.",
+    "invalidId": "\"{id}\" is not a valid schema id.",
+    "notFound": "No schema with id {id} for this account."
+  },
+  "errors": {
+    "signIn": "Sign in to see this.",
+    "generic": "Something went wrong.",
+    "required": "{field} is required.",
+    "too_short": "{field} is too short.",
+    "too_long": "{field} is too long.",
+    "invalid_type": "{field} is the wrong type.",
+    "invalid_format": "{field} is not in the expected format.",
+    "below_minimum": "{field} is below the minimum.",
+    "above_maximum": "{field} is above the maximum.",
+    "invalid_step": "{field} is not an allowed increment.",
+    "unknown_option": "{field} is not one of the allowed choices.",
+    "duplicate_option": "{field} repeats a choice.",
+    "unknown_field": "{field} is not a field on this schema.",
+    "too_few_items": "{field} needs more items.",
+    "too_many_items": "{field} has too many items.",
+    "values_not_object": "The values must be a JSON object.",
+    "duplicate_name": "That name is already in use.",
+    "duplicate_key": "That field key is used more than once."
+  }
+}
