@@ -14,6 +14,8 @@ const API_ORIGIN = process.env.HANDYTOOL_API_URL ?? "http://localhost:5292";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  // Test instances use an isolated build directory as well as a separate port.
+  distDir: process.env.HANDYTOOL_NEXT_DIST_DIR ?? ".next",
 
   async rewrites() {
     if (process.env.NODE_ENV === "production") {

@@ -6,7 +6,7 @@ import { defaultLocale, isLocale } from "@/i18n/config";
 export async function signIn(lang: string, form: FormData) {
   const locale = isLocale(lang) ? lang : defaultLocale;
   const email = String(form.get("email") ?? "").trim(), password = String(form.get("password") ?? "");
-  if (!email || email.length > 254 || !password || password.length > 1024) redirect(`/${locale}/login?error=credentials`);
+  if (!email || email.length > 320 || !password || password.length > 1024) redirect(`/${locale}/login?error=credentials`);
   const result = await authenticate(email, password);
   if (!result.ok) redirect(`/${locale}/login?error=${result.status === 429 ? "throttled" : result.status === 0 || result.status >= 500 ? "unavailable" : "credentials"}`);
   redirect(`/${locale}`);

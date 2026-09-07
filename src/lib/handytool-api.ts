@@ -1,3 +1,4 @@
+import type { RegistrationPayload } from "./registration-types";
 import "server-only";
 import { cache } from "react";
 import type { HomeData } from "./home-types";
@@ -218,4 +219,10 @@ export function authenticate(email: string, password: string) {
 export function logout() { return request<unknown>("/api/auth/logout", { method: "POST" }); }
 export function getRecord(id: string) {
   return request<ObjectRecord>(`/api/records/${encodeURIComponent(id)}`);
+}
+export function registerAccount(payload: RegistrationPayload) {
+  return request<unknown>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, clientType: "Web", deviceName: "Handytool web" }),
+  });
 }
