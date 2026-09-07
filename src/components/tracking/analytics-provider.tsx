@@ -42,7 +42,7 @@ export function AnalyticsProvider({ language }: Props) {
 
   // Kept in a ref so a language switch does not tear down and restart the heartbeat: the tab is
   // still visible and the reader is still on the same page.
-  languageRef.current = language;
+  useEffect(() => { languageRef.current = language; }, [language]);
 
   // The interval is configured server-side, so it can change without redeploying the website.
   useEffect(() => {

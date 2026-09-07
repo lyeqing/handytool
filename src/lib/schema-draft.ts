@@ -42,7 +42,7 @@ export function emptyField(uid: string): DraftField {
     key: "",
     name: "",
     description: "",
-    fieldType: "Text",
+    fieldType: "ShortText",
     isRequired: false,
     minimumLength: "",
     maximumLength: "",
@@ -77,7 +77,7 @@ export function buildSettings(field: DraftField): Record<string, unknown> {
   const settings: Record<string, unknown> = {};
 
   switch (field.fieldType) {
-    case "Text":
+    case "ShortText":
     case "LongText":
       put(settings, "minimumLength", numeric(field.minimumLength));
       put(settings, "maximumLength", numeric(field.maximumLength));
@@ -136,7 +136,7 @@ export function customerSchemaDraft(uid: () => string): SchemaDraft {
         ...emptyField(uid()),
         key: "fullName",
         name: "Full Name",
-        fieldType: "Text",
+        fieldType: "ShortText",
         isRequired: true,
         minimumLength: "2",
         maximumLength: "120",
@@ -145,7 +145,7 @@ export function customerSchemaDraft(uid: () => string): SchemaDraft {
         ...emptyField(uid()),
         key: "emailAddress",
         name: "Email Address",
-        fieldType: "Text",
+        fieldType: "ShortText",
         isRequired: true,
         maximumLength: "200",
       },

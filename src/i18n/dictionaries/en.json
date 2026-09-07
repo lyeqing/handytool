@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "HandyTool",
-    "tagline": "Every schema below is metadata. Records of all of them share one table and one C# entity."
+    "tagline": "Practical tools for a simpler day."
   },
   "nav": {
     "language": "Language",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AnalyticsProvider } from "@/components/tracking/analytics-provider";
-import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { SiteHeader, SiteFooter } from "@/components/home/chrome";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { defaultLocale, isLocale, locales, type Locale } from "@/i18n/config";
 import "../globals.css";
@@ -42,7 +42,7 @@ export default async function RootLayout({
   // The middleware only ever routes here with a supported locale, but the segment is still a string
   // as far as the type system is concerned - so an unexpected value falls back rather than crashing.
   const locale: Locale = isLocale(lang) ? lang : defaultLocale;
-  const dictionary = getDictionary(locale);
+
 
   return (
     <html
@@ -50,10 +50,9 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header className="flex justify-end px-6 py-3">
-          <LanguageSwitcher current={locale} label={dictionary.nav.language} />
-        </header>
+        <SiteHeader locale={locale} />
         {children}
+        <SiteFooter locale={locale} />
         {/* Renders nothing. Mounted here so one tracker covers every route, and so a client-side
             navigation is still seen as a page view. */}
         <AnalyticsProvider language={locale} />

@@ -378,7 +378,7 @@ function FieldSettings({
   let boxes: React.ReactNode = null;
 
   switch (field.fieldType) {
-    case "Text":
+    case "ShortText":
     case "LongText":
       boxes = (
         <>

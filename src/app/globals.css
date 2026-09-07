@@ -1,26 +1,11 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+@custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body { @apply bg-slate-50 text-slate-700; font-family: var(--font-sans); }
+a, button, input, select, textarea, summary { @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600; }
+.btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-sky-700 disabled:opacity-50; }
+.btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100; }
+.form-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900; }

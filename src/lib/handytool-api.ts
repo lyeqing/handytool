@@ -1,3 +1,6 @@
+import "server-only";
+import { cache } from "react";
+import type { HomeData } from "./home-types";
 import { cookies } from "next/headers";
 import type {
   ObjectDefinition,
@@ -38,7 +41,7 @@ export type ApiResult<T> =
 async function forwardedCookies(): Promise<Record<string, string>> {
   const store = await cookies();
 
-  const forwarded = ["session_token", "visitor_id"]
+  const forwarded = ["session_token", "visitor_id", "handytool_trial"]
     .map((name) => {
       const value = store.get(name)?.value;
       return value ? `${name}=${value}` : null;
@@ -74,6 +77,8 @@ async function request<T>(
       problem: null,
     };
   }
+
+  if (init?.method && init.method !== "GET") await relayCookies(response);
 
   if (response.status === 401) {
     return {
@@ -175,4 +180,42 @@ export function createRecord(
     `/api/object-definitions/${definitionId}/records`,
     { method: "POST", body: JSON.stringify(payload) },
   );
+}
+
+/** Only mutations may set browser cookies. Server Component reads never mutate them. */
+async function relayCookies(response: Response) {
+  const store = await cookies();
+  for (const header of response.headers.getSetCookie()) {
+    const [pair, ...attributes] = header.split(";");
+    const equals = pair.indexOf("=");
+    const name = pair.slice(0, equals).trim();
+    if (!["session_token", "visitor_id", "handytool_trial"].includes(name)) continue;
+    const attr = new Map(attributes.map(part => {
+      const [key, ...value] = part.trim().split("=");
+      return [key.toLowerCase(), value.join("=")] as const;
+    }));
+    const sameSite = attr.get("samesite")?.toLowerCase();
+    store.set(name, pair.slice(equals + 1), {
+      httpOnly: true,
+      secure: attr.has("secure") || process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: sameSite === "strict" || sameSite === "none" ? sameSite : "lax",
+      ...(attr.has("expires") ? { expires: new Date(attr.get("expires")!) } : {}),
+      ...(attr.has("max-age") ? { maxAge: Number(attr.get("max-age")) } : {}),
+    });
+  }
+}
+export function getHome(language: string, category?: number, subcategory?: number, skip = 0) {
+  const query = new URLSearchParams({ lang: language, skip: String(skip) });
+  if (category !== undefined) query.set("categoryId", String(category));
+  if (subcategory !== undefined) query.set("subcategoryId", String(subcategory));
+  return request<HomeData>(`/api/home?${query}`);
+}
+export const getCurrentUser = cache(() => request<{ id: number; displayName: string }>("/api/auth/me"));
+export function authenticate(email: string, password: string) {
+  return request<unknown>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password, clientType: "Web", deviceName: "Handytool web" }) });
+}
+export function logout() { return request<unknown>("/api/auth/logout", { method: "POST" }); }
+export function getRecord(id: string) {
+  return request<ObjectRecord>(`/api/records/${encodeURIComponent(id)}`);
 }

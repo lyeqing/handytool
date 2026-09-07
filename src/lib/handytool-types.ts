@@ -4,7 +4,7 @@
  */
 
 export const FIELD_TYPES = [
-  "Text",
+  "ShortText",
   "LongText",
   "Integer",
   "Decimal",

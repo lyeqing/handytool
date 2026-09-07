@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "HandyTool",
-    "tagline": "下面的每个模型都是元数据。所有模型的记录共用一张表和一个 C# 实体。"
+    "tagline": "实用工具，让日常更简单。"
   },
   "nav": {
     "language": "语言",

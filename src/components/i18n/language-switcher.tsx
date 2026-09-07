@@ -32,14 +32,14 @@ export function LanguageSwitcher({ current, label }: Props) {
 
     // One year, matching how long the choice is worth remembering. SameSite=Lax keeps it off
     // cross-site requests; there is nothing sensitive in it either way.
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+    rememberLocale(next);
 
     // Swap just the first segment: /zh-Hans/schemas/new stays on the same page in the new language.
     const segments = pathname.split("/");
     segments[1] = next;
 
     startTransition(() => {
-      router.replace(segments.join("/") || `/${next}`);
+      router.replace((segments.join("/") || `/${next}`) + window.location.search + window.location.hash);
       router.refresh();
     });
   };
@@ -56,8 +56,8 @@ export function LanguageSwitcher({ current, label }: Props) {
           onClick={() => switchTo(locale)}
           className={
             locale === current
-              ? "rounded-md bg-zinc-900 px-3 py-1.5 text-white dark:bg-zinc-100 dark:text-zinc-900"
-              : "rounded-md border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              ? "min-h-10 rounded-lg bg-sky-50 px-3 py-2 text-sky-800"
+              : "min-h-10 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
           }
         >
           {localeNames[locale]}
@@ -65,4 +65,8 @@ export function LanguageSwitcher({ current, label }: Props) {
       ))}
     </nav>
   );
+}
+
+function rememberLocale(next: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
 }
