@@ -101,8 +101,10 @@ async function request<T>(
   }
 
   let problem: ValidationErrorResponse | null = null;
+  let problemTitle: string | null = null;
   try {
     const parsed = JSON.parse(body);
+    if (typeof parsed?.title === "string") problemTitle = parsed.title;
     if (parsed && Array.isArray(parsed.errors)) {
       problem = parsed as ValidationErrorResponse;
     }
@@ -113,7 +115,7 @@ async function request<T>(
   return {
     ok: false,
     status: response.status,
-    message: problem?.title ?? summarise(body, response.status),
+    message: problem?.title ?? problemTitle ?? summarise(body, response.status),
     problem,
   };
 }
@@ -212,7 +214,7 @@ export function getHome(language: string, category?: number, subcategory?: numbe
   if (subcategory !== undefined) query.set("subcategoryId", String(subcategory));
   return request<HomeData>(`/api/home?${query}`);
 }
-export const getCurrentUser = cache(() => request<{ id: number; displayName: string }>("/api/auth/me"));
+export const getCurrentUser = cache(() => request<{ id: number; displayName: string; isSuperAdmin: boolean }>("/api/auth/me"));
 export function authenticate(email: string, password: string) {
   return request<unknown>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password, clientType: "Web", deviceName: "Handytool web" }) });
 }
@@ -225,4 +227,11 @@ export function registerAccount(payload: RegistrationPayload) {
     method: "POST",
     body: JSON.stringify({ ...payload, clientType: "Web", deviceName: "Handytool web" }),
   });
+}
+export function listAdmin(section: import("./admin-types").AdminSection, q: string, skip: number, sub: boolean) {
+ return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({q,skip:String(skip),sub:String(sub)})}`);
+}
+export function adminPlans() { return request<import("./admin-types").AdminPlan[]>("/api/admin/plans"); }
+export function saveAdmin(section: import("./admin-types").AdminSection, id: number | null, sub: boolean, payload: Record<string,unknown>) {
+ return request<unknown>(`/api/admin/${section}${id===null?"":"/"+encodeURIComponent(id)}?sub=${sub}`,{method:id===null?"POST":"PUT",body:JSON.stringify(payload)});
 }

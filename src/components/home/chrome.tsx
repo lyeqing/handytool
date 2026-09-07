@@ -15,6 +15,7 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
         <Link href={`/${locale}`} className="flex items-center gap-3 text-xl font-semibold tracking-tight text-slate-900"><span aria-hidden="true" className="flex size-9 items-center justify-center rounded-lg bg-sky-600 text-lg text-white">h.</span>handytool<span className="text-sky-600">.</span></Link>
         <div className="flex flex-wrap items-center gap-3 sm:gap-6">
           <LanguageSwitcher current={locale} label={locale === "en" ? "Language" : "语言"} />
+          {user.ok && user.data.isSuperAdmin && <Link className="text-sm font-medium text-sky-700" href={`/${locale}/admin`}>{locale === "en" ? "Admin" : "管理中心"}</Link>}
           {user.ok ? <form action={signOut.bind(null, locale)}><button className="btn-secondary">{t.signOut}</button></form> : <><Link className="text-sm font-medium text-sky-700 hover:underline" href={`/${locale}/login`}>{t.signIn}</Link><Link className="btn-primary" href={`/${locale}/register`}>{registrationCopy(locale).register}</Link></>}
         </div>
       </div>
