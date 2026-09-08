@@ -228,10 +228,14 @@ export function registerAccount(payload: RegistrationPayload) {
     body: JSON.stringify({ ...payload, clientType: "Web", deviceName: "Handytool web" }),
   });
 }
-export function listAdmin(section: import("./admin-types").AdminSection, q: string, skip: number, sub: boolean, masterCategoryId?: number) {
- return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({q,skip:String(skip),sub:String(sub),...(masterCategoryId===undefined?{}:{masterCategoryId:String(masterCategoryId)})})}`);
+export function listAdmin(section: import("./admin-types").AdminSection, q: string, skip: number, sub: boolean, masterCategoryId?: number, filters: Record<string,string> = {}) {
+ return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({...filters,q,skip:String(skip),sub:String(sub),...(masterCategoryId===undefined?{}:{masterCategoryId:String(masterCategoryId)})})}`);
 }
 export function adminPlans() { return request<import("./admin-types").AdminPlan[]>("/api/admin/plans"); }
 export function saveAdmin(section: import("./admin-types").AdminSection, id: number | null, sub: boolean, payload: Record<string,unknown>) {
  return request<unknown>(`/api/admin/${section}${id===null?"":"/"+encodeURIComponent(id)}?sub=${sub}`,{method:id===null?"POST":"PUT",body:JSON.stringify(payload)});
 }
+export function deleteAdminCategory(id: number, sub: boolean, modifiedDate: string) {
+ return request<unknown>(`/api/admin/categories/${encodeURIComponent(id)}?${new URLSearchParams({sub:String(sub),modifiedDate})}`, {method:"DELETE"});
+}
+export function adminCompanyOptions() { return request<{id:number;name:string}[]>("/api/admin/company-options"); }

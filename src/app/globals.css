@@ -35,3 +35,35 @@ input:disabled::file-selector-button,
 label:has(input:is([type="checkbox"], [type="radio"]):disabled) {
   cursor: not-allowed;
 }
+/* Material-inspired category surfaces: hierarchy, elevation, and clear state layers. */
+.admin-category-card, .admin-account-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 2px 4px rgb(15 23 42 / 5%), 0 6px 16px rgb(15 23 42 / 5%);
+}
+.admin-card-heading { padding: 1.25rem; border-radius: 1rem 1rem 0 0; background: #f0f7fc; }
+.admin-card-actions { padding: .25rem .5rem; border-top: 1px solid #e2e8f0; }
+.admin-status { display: inline-flex; align-items: center; gap: .375rem; border-radius: 9999px; padding: .25rem .625rem; font-size: .75rem; font-weight: 600; }
+.admin-create { border: 1px solid #bae6fd; border-radius: 1rem; background: #f0f9ff; box-shadow: 0 2px 5px rgb(15 23 42 / 5%); padding: .25rem; }
+.admin-disclosure { display: flex; align-items: center; gap: .75rem; min-height: 48px; padding: .75rem 1rem; border-radius: .75rem; font-size: .875rem; font-weight: 600; list-style: none; }
+.admin-disclosure::-webkit-details-marker { display: none; }
+.admin-disclosure:hover { background: rgb(15 23 42 / 5%); }
+details[open] > .admin-disclosure .admin-chevron { transform: rotate(180deg); }
+.admin-text-action { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; border-radius: .5rem; padding: .25rem .5rem; color: #0369a1; font-size: .875rem; font-weight: 600; }
+.admin-text-action:hover { background: #e0f2fe; }
+.admin-category-card, .admin-account-card { container-type: inline-size; }
+@container (max-width: 30rem) {
+  .admin-card-actions form > fieldset { grid-template-columns: minmax(0, 1fr); }
+  .admin-card-actions form > fieldset > div { grid-column: auto; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .admin-disclosure, .admin-text-action { transition: background-color 150ms ease; }
+  .admin-chevron { transition: transform 150ms ease; }
+}
+.admin-account-meta { display: grid; gap: .75rem; padding: 1rem 1.25rem; font-size: .875rem; }
+.admin-account-meta > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: .75rem; }
+.admin-account-meta dt { color: #64748b; }
+.admin-account-meta dd { margin: 0; color: #334155; overflow-wrap: anywhere; }
+.admin-card-actions form > fieldset > label { min-width: 0; }
+.admin-card-actions input, .admin-card-actions select, .admin-card-actions textarea { min-width: 0; }

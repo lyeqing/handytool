@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { saveAdminAction } from "@/app/[lang]/admin/actions";
+import { saveAdminAction, deleteCategoryAction } from "@/app/[lang]/admin/actions";
 import { adminCopy } from "@/i18n/admin-copy";
 import type { AdminRow, AdminSection, AdminPlan } from "@/lib/admin-types";
 
@@ -40,4 +40,22 @@ export function AdminForm({lang,section,row,sub=false,plans=[],masterCategoryId}
    <div className="sm:col-span-2">{section==="users"&&<p className="mb-4 text-sm text-slate-500">{t.hint}</p>}<button className="btn-primary" disabled={pending}>{pending?t.saving:t.save}</button></div>
   </fieldset>
  </form>;
+}
+
+export function DeleteCategoryForm({lang,row,sub}:{lang:string;row:AdminRow;sub:boolean}) {
+ const t=adminCopy(lang);
+ const [state,action,pending]=useActionState(deleteCategoryAction.bind(null,lang,row.id,sub,row.modifiedDate),null);
+ if(!sub && row.id===-1) return null;
+ return <details className="border-t border-slate-100">
+  <summary className="admin-disclosure text-red-700"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 shrink-0"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg><span>{t.deleteCategory}</span><span aria-hidden="true" className="admin-chevron ml-auto">⌄</span></summary>
+  <form action={action} className="m-4 space-y-4 rounded-xl border border-red-200 bg-red-50 p-4 shadow-inner">
+   <p className="font-medium text-slate-900">{row.name}</p>
+   <p className="text-sm text-slate-700">{sub?t.deleteSubWarning:t.deleteMasterWarning}</p>
+   {state&&<p role="status" className={state.ok?"text-emerald-700":"text-red-700"}>{state.message}</p>}
+   <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
+    <label className="flex items-start gap-3 text-sm"><input type="checkbox" name="confirmDelete" required className="mt-1 size-4 accent-red-700"/>{t.confirmDelete}</label>
+    <button className="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50" disabled={pending}>{pending?t.deleting:t.deleteCategory}</button>
+   </fieldset>
+  </form>
+ </details>;
 }

@@ -7,3 +7,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## User UI preference
+Use Material Design principles for future UI work: clear typographic hierarchy, distinct navigation and entity labels, layered surfaces with restrained elevation/shadows, recognizable icons with text labels, and accessible hover/focus/disabled states. Preserve responsive mobile layouts and the existing Sky/Slate/Emerald palette. Aim for polished, purposeful detail rather than flat, indistinguishable headings and cards.

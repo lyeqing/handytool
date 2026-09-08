@@ -1,5 +1,5 @@
 "use server";
-import { getCurrentUser, saveAdmin } from "@/lib/handytool-api";
+import { getCurrentUser, saveAdmin, deleteAdminCategory } from "@/lib/handytool-api";
 import { revalidatePath } from "next/cache";
 import { isLocale } from "@/i18n/config";
 import { adminCopy } from "@/i18n/admin-copy";
@@ -37,4 +37,19 @@ export async function saveAdminAction(lang: string, section: AdminSection, id: n
  revalidatePath(`/${lang}/admin`,"layout");
  revalidatePath(`/${lang}`,"layout");
  return {message:t.saved,ok:true};
+}
+
+export async function deleteCategoryAction(lang: string, id: number, sub: boolean, modifiedDate: string,
+ _previous: { message: string; ok: boolean } | null, form: FormData) {
+ const t=adminCopy(lang);
+ if(!isLocale(lang) || !Number.isSafeInteger(id) || form.get("confirmDelete")!=="on")
+  return {message:t.confirmRequired,ok:false};
+ const actor=await getCurrentUser();
+ if(!actor.ok || !actor.data.isSuperAdmin) return {message:t.forbidden,ok:false};
+ const result=await deleteAdminCategory(id,sub,modifiedDate);
+ if(!result.ok) return {message:result.status===401||result.status===403?t.forbidden:
+  lang==="en" && result.status>=400 && result.status<500?result.message:result.status===409?t.conflict:t.failed,ok:false};
+ revalidatePath(`/${lang}/admin`,"layout");
+ revalidatePath(`/${lang}`,"layout");
+ return {message:t.deleted,ok:true};
 }
