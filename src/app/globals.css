@@ -9,3 +9,29 @@ a, button, input, select, textarea, summary { @apply focus-visible:outline-2 foc
 .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-sky-700 disabled:opacity-50; }
 .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100; }
 .form-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900; }
+
+/* Use a pointer for interactive controls and their clickable labels. */
+a[href],
+button,
+select,
+summary,
+[role="button"],
+[role="link"],
+[role="tab"],
+input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="range"], [type="color"]),
+input::file-selector-button,
+label[for],
+label:has(input:is([type="checkbox"], [type="radio"])) {
+  cursor: pointer;
+}
+
+/* :disabled also covers controls inside a disabled fieldset. */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"],
+input:disabled::file-selector-button,
+label:has(input:is([type="checkbox"], [type="radio"]):disabled) {
+  cursor: not-allowed;
+}

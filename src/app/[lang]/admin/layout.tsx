@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/handytool-api";
 import { adminCopy } from "@/i18n/admin-copy";
@@ -9,5 +9,5 @@ export default async function AdminLayout({children,params}:{children:React.Reac
  if(!user.data.isSuperAdmin) return <main id="main-content" className="p-8">{t.forbidden}</main>;
  return <main id="main-content" className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
  <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1><p className="mt-3 text-slate-600">{t.intro}</p>
- <nav aria-label={t.title} className="my-8 flex flex-wrap gap-3">{(["users","companies","categories"] as const).map(s=><Link className="btn-secondary" key={s} href={`/${lang}/admin/${s}`}>{t[s]}</Link>)}</nav>{children}</main>;
+ <AdminNav lang={lang} />{children}</main>;
 }

@@ -228,8 +228,8 @@ export function registerAccount(payload: RegistrationPayload) {
     body: JSON.stringify({ ...payload, clientType: "Web", deviceName: "Handytool web" }),
   });
 }
-export function listAdmin(section: import("./admin-types").AdminSection, q: string, skip: number, sub: boolean) {
- return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({q,skip:String(skip),sub:String(sub)})}`);
+export function listAdmin(section: import("./admin-types").AdminSection, q: string, skip: number, sub: boolean, masterCategoryId?: number) {
+ return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({q,skip:String(skip),sub:String(sub),...(masterCategoryId===undefined?{}:{masterCategoryId:String(masterCategoryId)})})}`);
 }
 export function adminPlans() { return request<import("./admin-types").AdminPlan[]>("/api/admin/plans"); }
 export function saveAdmin(section: import("./admin-types").AdminSection, id: number | null, sub: boolean, payload: Record<string,unknown>) {

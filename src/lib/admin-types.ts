@@ -6,5 +6,5 @@ export interface AdminRow {
   seatLimit?: number; expiresAt?: string | null; description?: string; displayOrder?: number; masterCategoryId?: number | null;
   translations?: { languageCode: string; name: string | null; description: string | null }[];
 }
-export interface AdminPage { items: AdminRow[]; total: number }
+export interface AdminPage { items: AdminRow[]; total: number; parent?: { id: number; name: string } }
 export interface AdminPlan { id: number; name: string; code: string }

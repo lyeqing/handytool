@@ -1,6 +1,6 @@
 export function adminCopy(lang: string) {
  return lang === "zh-Hans" ? {
- title:"管理中心", users:"用户", companies:"公司", categories:"分类", intro:"管理账户、公司和工具分类。",
+ createMaster:"新建主分类", createSub:"新建子分类", manageSub:"管理子分类", title:"管理中心", users:"用户", companies:"公司", categories:"分类", intro:"管理账户、公司和工具分类。",
  search:"搜索", save:"保存", saving:"正在保存…", saved:"已保存", failed:"无法保存。请检查字段，或刷新后重试。",
  forbidden:"需要超级用户权限。", unavailable:"暂时无法加载管理数据。", create:"新建分类", edit:"编辑", active:"启用",
  displayName:"姓名", name:"名称", email:"电子邮箱", phone:"电话或手机（选填）", preferredLanguage:"语言",
@@ -12,7 +12,7 @@ export function adminCopy(lang: string) {
  enName:"英文名称（选填）", enDescription:"英文描述（选填）", zhName:"中文名称（选填）", zhDescription:"中文描述（选填）",
  conflict:"无法保存：条目已更改、名称重复、席位不足，或会移除最后一位管理员。请检查后重试。"
  } : {
- title:"Administration", users:"Users", companies:"Companies", categories:"Categories", intro:"Manage accounts, companies, and tool categories.",
+ createMaster:"New master category", createSub:"New subcategory", manageSub:"Manage subcategories", title:"Administration", users:"Users", companies:"Companies", categories:"Categories", intro:"Manage accounts, companies, and tool categories.",
  search:"Search", save:"Save", saving:"Saving…", saved:"Saved", failed:"Could not save. Check the fields, or reload and try again.",
  forbidden:"Superuser access is required.", unavailable:"Administration data is temporarily unavailable.", create:"New category", edit:"Edit", active:"Active",
  displayName:"Name", name:"Name", email:"Email", phone:"Phone or mobile (optional)", preferredLanguage:"Language",

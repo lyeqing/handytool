@@ -4,7 +4,7 @@ import { saveAdminAction } from "@/app/[lang]/admin/actions";
 import { adminCopy } from "@/i18n/admin-copy";
 import type { AdminRow, AdminSection, AdminPlan } from "@/lib/admin-types";
 
-export function AdminForm({lang,section,row,sub=false,plans=[]}:{lang:string;section:AdminSection;row?:AdminRow;sub?:boolean;plans?:AdminPlan[]}) {
+export function AdminForm({lang,section,row,sub=false,plans=[],masterCategoryId}:{lang:string;section:AdminSection;row?:AdminRow;sub?:boolean;plans?:AdminPlan[];masterCategoryId?:number}) {
  const t=adminCopy(lang);
  const [state,action,pending]=useActionState(saveAdminAction.bind(null,lang,section,row?.id??null,sub),null);
  const input=(key:keyof typeof t,value: string|number|null|undefined,type="text",required=false,max?:number)=>
@@ -30,7 +30,7 @@ export function AdminForm({lang,section,row,sub=false,plans=[]}:{lang:string;sec
    </>}
    {section==="categories" && <>
     {input("name",row?.name,"text",true,200)}{input("description",row?.description,"text",false,2000)}
-    {input("displayOrder",row?.displayOrder??0,"number",true)}{sub&&input("masterCategoryId",row?.masterCategoryId,"number",true)}
+    {input("displayOrder",row?.displayOrder??0,"number",true)}{sub&&<input type="hidden" name="masterCategoryId" value={masterCategoryId??row?.masterCategoryId??""}/>}
     {input("enName",row?.translations?.find(t=>t.languageCode==="en")?.name,"text",false,200)}
     {input("enDescription",row?.translations?.find(t=>t.languageCode==="en")?.description,"text",false,2000)}
     {input("zhName",row?.translations?.find(t=>t.languageCode==="zh-Hans")?.name,"text",false,200)}
