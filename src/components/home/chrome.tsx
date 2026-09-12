@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { getCurrentUser } from "@/lib/handytool-api";
 import { homeCopy } from "@/i18n/home-copy";
 import type { Locale } from "@/i18n/config";
-import { signOut } from "@/app/[lang]/login/actions";
+import { AccountMenu } from "@/components/home/account-menu";
 export async function SiteHeader({ locale }: { locale: Locale }) {
   const t = homeCopy(locale);
   const user = await getCurrentUser();
@@ -16,7 +16,7 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
         <div className="flex flex-wrap items-center gap-3 sm:gap-6">
           <LanguageSwitcher current={locale} label={locale === "en" ? "Language" : "语言"} />
           {user.ok && user.data.isSuperAdmin && <Link className="text-sm font-medium text-sky-700" href={`/${locale}/admin`}>{locale === "en" ? "Admin" : "管理中心"}</Link>}
-          {user.ok ? <form action={signOut.bind(null, locale)}><button className="btn-secondary">{t.signOut}</button></form> : <><Link className="text-sm font-medium text-sky-700 hover:underline" href={`/${locale}/login`}>{t.signIn}</Link><Link className="btn-primary" href={`/${locale}/register`}>{registrationCopy(locale).register}</Link></>}
+          {user.ok ? <AccountMenu key={user.data.id} locale={locale} name={user.data.displayName} email={user.data.email} isSuperAdmin={user.data.isSuperAdmin} companyName={user.data.companyName}/> : <><Link className="text-sm font-medium text-sky-700 hover:underline" href={`/${locale}/login`}>{t.signIn}</Link><Link className="btn-primary" href={`/${locale}/register`}>{registrationCopy(locale).register}</Link></>}
         </div>
       </div>
     </header>

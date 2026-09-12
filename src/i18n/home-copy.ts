@@ -1,5 +1,6 @@
 import type { Locale } from "./config";
 const en = {
+  accountMenu:"Account menu", signedInAs:"Signed in as", accountSuperuser:"Superuser", accountOwner:"Company Owner", accountAdmin:"Company Admin", accountMember:"Company Member", accountPersonal:"Personal account",
   tagline: "A little help. A lot less hassle.", badge: "FOR THE EVERYDAY AND EVERYTHING ELSE",
   title: "Make room for", accent: "a simpler day.",
   intro: "Handy tools for the things life asks of you. Find a useful checklist, organise your ideas, and keep your everyday details together — all in one place.",
@@ -30,6 +31,7 @@ const en = {
   previewFoot: "Find your tool. Take the next step.", values: "Your details", skip: "Skip to content"
 };
 const zh: typeof en = {
+  accountMenu:"账户菜单", signedInAs:"当前登录账户", accountSuperuser:"超级用户", accountOwner:"公司所有者", accountAdmin:"公司管理员", accountMember:"公司成员", accountPersonal:"个人账户",
   tagline: "小小帮手，让生活轻松一点。", badge: "为日常大小事准备",
   title: "让每一天", accent: "简单一点。",
   intro: "为生活中的大小事提供实用工具。找到合适的清单，整理想法，把日常信息收在一处。",

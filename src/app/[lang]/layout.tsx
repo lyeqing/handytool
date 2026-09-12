@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_SC } from "next/font/google";
 import { AnalyticsProvider } from "@/components/tracking/analytics-provider";
 import { SiteHeader, SiteFooter } from "@/components/home/chrome";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -14,6 +14,11 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoSansSC = Noto_Sans_SC({
+  variable: "--font-noto-sans-sc",
+  preload: false,
 });
 
 /** Prerenders one shell per language instead of rendering them on demand. */
@@ -47,7 +52,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSansSC.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SiteHeader locale={locale} />

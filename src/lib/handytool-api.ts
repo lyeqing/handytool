@@ -214,7 +214,7 @@ export function getHome(language: string, category?: number, subcategory?: numbe
   if (subcategory !== undefined) query.set("subcategoryId", String(subcategory));
   return request<HomeData>(`/api/home?${query}`);
 }
-export const getCurrentUser = cache(() => request<{ id: number; displayName: string; isSuperAdmin: boolean }>("/api/auth/me"));
+export const getCurrentUser = cache(() => request<{ id: number; displayName: string; email: string; isSuperAdmin: boolean; companyRole?: "Owner" | "Admin" | "Member" | null; companyName?: string | null }>("/api/auth/me"));
 export function authenticate(email: string, password: string) {
   return request<unknown>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password, clientType: "Web", deviceName: "Handytool web" }) });
 }
