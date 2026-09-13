@@ -127,6 +127,14 @@
       "Collection": "集合"
     },
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "schemaNamePlaceholder": "输入架构名称",
+    "schemaDescriptionPlaceholder": "描述此架构的用途",
+    "fieldKeyPlaceholder": "例如 fullName",
+    "fieldNamePlaceholder": "例如 姓名",
+    "fieldDescriptionPlaceholder": "说明需要填写什么内容",
+    "fieldKeyHint": "用于标识已保存数据中的字段。以英文字母开头，只能包含英文字母、数字或下划线，不能包含空格。",
+    "choiceValuePlaceholder": "例如 standard",
+    "choiceLabelPlaceholder": "例如 标准"
   }
 }

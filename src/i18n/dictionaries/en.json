@@ -127,6 +127,14 @@
       "Collection": "Collection"
     },
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "schemaNamePlaceholder": "Enter a schema name",
+    "schemaDescriptionPlaceholder": "Describe what this schema is used for",
+    "fieldKeyPlaceholder": "e.g. fullName",
+    "fieldNamePlaceholder": "e.g. Full name",
+    "fieldDescriptionPlaceholder": "Explain what someone should enter",
+    "fieldKeyHint": "Identifies this field in stored data. Start with a letter; use letters, numbers or underscores, without spaces.",
+    "choiceValuePlaceholder": "e.g. standard",
+    "choiceLabelPlaceholder": "e.g. Standard"
   }
 }

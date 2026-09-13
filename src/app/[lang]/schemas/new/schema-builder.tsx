@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useRef, useState } from "react";
+import { startTransition, useActionState, useId, useRef, useState } from "react";
 import { FIELD_TYPES, hasOptions, type FieldType, type ObjectDefinition } from "@/lib/handytool-types";
-import { buildSettings, customerSchemaDraft, definitionToDraft, emptyField, type DraftField, type SchemaDraft } from "@/lib/schema-draft";
+import { buildSettings, emptySchemaDraft, definitionToDraft, emptyField, type DraftField, type SchemaDraft } from "@/lib/schema-draft";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { createSchemaAction } from "./actions";
 import { updateSchemaAction } from "../[id]/edit/actions";
@@ -28,7 +28,7 @@ export function SchemaBuilder({locale,t,initial,definitions=[]}: {
   const uid = () => `field-${++next.current}`;
   const [draft,setDraft] = useState<SchemaDraft>(() => {
     let seed=0;
-    return initial ? definitionToDraft(initial) : customerSchemaDraft(() => `seed-${++seed}`);
+    return initial ? definitionToDraft(initial) : emptySchemaDraft(() => `seed-${++seed}`);
   });
   const [state,submit,pending] = useActionState(
     initial ? updateSchemaAction.bind(null,locale,initial.id) : createSchemaAction.bind(null,locale), null
@@ -45,8 +45,8 @@ export function SchemaBuilder({locale,t,initial,definitions=[]}: {
     </div>}
     <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
-        <label className="grid gap-2 text-sm font-medium">{t.name}<input required maxLength={200} className="form-input" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
-        <label className="grid gap-2 text-sm font-medium">{t.description}<textarea maxLength={2000} className="form-input" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label>
+        <label className="grid gap-2 text-sm font-medium">{t.name}<input required maxLength={200} className="form-input" placeholder={t.schemaNamePlaceholder} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
+        <label className="grid gap-2 text-sm font-medium">{t.description}<textarea maxLength={2000} className="form-input" placeholder={t.schemaDescriptionPlaceholder} value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label>
         <Translations t={t} label={t.name} value={draft.nameTranslations} onChange={value=>setDraft({...draft,nameTranslations:value})}/>
         <Translations t={t} label={t.description} value={draft.descriptionTranslations} onChange={value=>setDraft({...draft,descriptionTranslations:value})}/>
         {initial && <><label className="flex items-center gap-2"><input type="checkbox" checked={draft.isActive??true} onChange={e=>setDraft({...draft,isActive:e.target.checked})}/>{t.active}</label><p className="text-sm text-slate-500">{t.scope}</p></>}
@@ -78,15 +78,16 @@ function FieldEditor({field,t,uid,definitions,depth,onChange}:{
 }) {
   const set=(patch:Partial<DraftField>)=>onChange({...field,...patch});
   const settings=buildSettings(field);
+  const keyHintId = useId();
   return <div className="space-y-4">
     <div className="grid gap-4 sm:grid-cols-2">
-      <label className="grid min-w-0 gap-2 text-sm">{t.key}<input required pattern="[A-Za-z][A-Za-z0-9_]{0,99}" readOnly={!!field.id} className="form-input" value={field.key} onChange={e=>set({key:e.target.value})}/></label>
-      <label className="grid min-w-0 gap-2 text-sm">{t.name}<input required maxLength={200} className="form-input" value={field.name} onChange={e=>set({name:e.target.value})}/></label>
+      <label className="grid min-w-0 gap-2 text-sm">{t.key}<input required pattern="[A-Za-z][A-Za-z0-9_]{0,99}" readOnly={!!field.id} className="form-input" placeholder={t.fieldKeyPlaceholder} aria-describedby={keyHintId} value={field.key} onChange={e=>set({key:e.target.value})}/><span id={keyHintId} className="text-xs text-slate-500">{t.fieldKeyHint}</span></label>
+      <label className="grid min-w-0 gap-2 text-sm">{t.name}<input required maxLength={200} className="form-input" placeholder={t.fieldNamePlaceholder} value={field.name} onChange={e=>set({name:e.target.value})}/></label>
       <label className="grid min-w-0 gap-2 text-sm">{t.type}<select disabled={!!field.id} className="form-input" value={field.fieldType} onChange={e=>{
         const fieldType=e.target.value as FieldType;
         set({fieldType,settings:{},options:[],item:fieldType==="Collection"?{...emptyField(uid()),key:"item",name:t.item}:undefined});
       }}>{FIELD_TYPES.map(type=><option key={type} value={type} disabled={depth>=8&&(type==="Collection"||type==="Object")}>{t.fieldTypes[type]}</option>)}</select></label>
-      <label className="grid gap-2 text-sm">{t.description}<input maxLength={2000} className="form-input" value={field.description} onChange={e=>set({description:e.target.value})}/></label>
+      <label className="grid gap-2 text-sm">{t.description}<input maxLength={2000} className="form-input" placeholder={t.fieldDescriptionPlaceholder} value={field.description} onChange={e=>set({description:e.target.value})}/></label>
     </div>
     <div className="flex gap-4"><label className="flex items-center gap-2"><input type="checkbox" checked={field.isRequired} onChange={e=>set({isRequired:e.target.checked})}/>{t.required}</label><label className="flex items-center gap-2"><input type="checkbox" checked={field.isActive??true} onChange={e=>set({isActive:e.target.checked})}/>{t.active}</label></div>
     <Translations t={t} label={t.name} value={field.nameTranslations} onChange={v=>set({nameTranslations:v})}/>
@@ -108,8 +109,8 @@ function FieldEditor({field,t,uid,definitions,depth,onChange}:{
       </label>;
     })}</div>
     {hasOptions(field.fieldType)&&<div className="space-y-3"><h3 className="font-medium">{t.options}</h3>{field.options.map((option,i)=><div key={option.uid} className="space-y-3 rounded-xl border border-slate-200 p-3">
-      <div className="grid gap-3 sm:grid-cols-2"><label className="grid gap-2 text-sm">{t.value}<input required readOnly={!!option.id} className="form-input" value={option.value} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,value:e.target.value}:o)})}/></label>
-      <label className="grid gap-2 text-sm">{t.label}<input required className="form-input" value={option.label} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,label:e.target.value}:o)})}/></label></div>
+      <div className="grid gap-3 sm:grid-cols-2"><label className="grid gap-2 text-sm">{t.value}<input required readOnly={!!option.id} className="form-input" placeholder={t.choiceValuePlaceholder} value={option.value} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,value:e.target.value}:o)})}/></label>
+      <label className="grid gap-2 text-sm">{t.label}<input required className="form-input" placeholder={t.choiceLabelPlaceholder} value={option.label} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,label:e.target.value}:o)})}/></label></div>
       <Translations t={t} label={t.label} value={option.labelTranslations} onChange={v=>set({options:field.options.map((o,n)=>n===i?{...o,labelTranslations:v}:o)})}/>
       <label className="flex items-center gap-2"><input type="checkbox" checked={option.isActive??true} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,isActive:e.target.checked}:o)})}/>{t.active}</label>
       {!option.id&&<button type="button" className="btn-secondary" onClick={()=>set({options:field.options.filter((_,n)=>n!==i)})}>{t.remove}</button>}
