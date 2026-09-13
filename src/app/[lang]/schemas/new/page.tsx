@@ -1,6 +1,6 @@
 import { listDefinitions } from "@/lib/handytool-api";
-import Link from "next/link";
-import { SchemaBuilder } from "./schema-builder";
+
+import { SchemaBuilder, SchemaPageHeader } from "./schema-builder";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { defaultLocale, isLocale } from "@/i18n/config";
 
@@ -22,26 +22,14 @@ export default async function NewSchemaPage({
 
   const definitions = await listDefinitions(locale);
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-10">
-      <Link
-        href={`/${locale}`}
-        className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
-      >
-        {t.nav.allSchemas}
-      </Link>
-
-      <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-        {t.schemaNew.title}
-      </h1>
-      <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
-        {t.schemaNew.intro}
-      </p>
+    <main id="main-content" className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+      <SchemaPageHeader title={t.schemaNew.title} intro={t.schemaNew.intro} back={t.nav.allSchemas} href={`/${locale}`}/>
 
       <div className="mt-8">
         {/* The builder redirects to the new schema after saving, and needs the locale to stay in
             the same language on the way there. */}
         <SchemaBuilder locale={locale} t={t.editing} definitions={definitions.ok ? definitions.data : []} />
       </div>
-    </div>
+    </main>
   );
 }

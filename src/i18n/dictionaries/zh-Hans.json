@@ -15,7 +15,7 @@
   },
   "schemaNew": {
     "title": "新建模型",
-    "intro": "这里设计的是 ObjectDefinition 及其字段。不会创建任何数据表或 C# 类——模型只是元数据行，之后添加的每条记录都会以 jsonb 的形式存入共用的 ObjectRecords 表。表单已预填了一个客户示例，可以随意修改或删除。"
+    "intro": "先为架构命名，再添加需要填写的字段。"
   },
   "recordNew": {
     "title": "添加{name}",
@@ -135,6 +135,12 @@
     "fieldDescriptionPlaceholder": "说明需要填写什么内容",
     "fieldKeyHint": "用于标识已保存数据中的字段。以英文字母开头，只能包含英文字母、数字或下划线，不能包含空格。",
     "choiceValuePlaceholder": "例如 standard",
-    "choiceLabelPlaceholder": "例如 标准"
+    "choiceLabelPlaceholder": "例如 标准",
+    "schemaDetails": "架构信息",
+    "schemaDetailsHint": "为架构设置清晰的名称和用途。",
+    "fieldsHint": "选择每条记录需要填写的信息。",
+    "untitledField": "未命名字段",
+    "translationsHint": "可选：设置其他语言的显示文字",
+    "settingsHint": "设置此字段的限制和输入提示"
   }
 }

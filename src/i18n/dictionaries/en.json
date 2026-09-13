@@ -15,7 +15,7 @@
   },
   "schemaNew": {
     "title": "Create a schema",
-    "intro": "This designs an ObjectDefinition and its fields. No table and no C# class is created — the schema is just metadata rows, and every record you add later lands in the shared ObjectRecords table as jsonb. The form is pre-filled with a Customer example; edit or delete anything."
+    "intro": "Start with a name, then add the fields you want people to fill in."
   },
   "recordNew": {
     "title": "Add a {name}",
@@ -135,6 +135,12 @@
     "fieldDescriptionPlaceholder": "Explain what someone should enter",
     "fieldKeyHint": "Identifies this field in stored data. Start with a letter; use letters, numbers or underscores, without spaces.",
     "choiceValuePlaceholder": "e.g. standard",
-    "choiceLabelPlaceholder": "e.g. Standard"
+    "choiceLabelPlaceholder": "e.g. Standard",
+    "schemaDetails": "Schema details",
+    "schemaDetailsHint": "Give your schema a clear name and purpose.",
+    "fieldsHint": "Choose the information each record should capture.",
+    "untitledField": "Untitled field",
+    "translationsHint": "Optional labels for other languages",
+    "settingsHint": "Set limits and hints for this field"
   }
 }
