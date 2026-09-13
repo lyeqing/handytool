@@ -2,13 +2,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createRecord } from "@/lib/handytool-api";
-import type { ValidationError } from "@/lib/handytool-types";
+import type { ValidationError, JsonObject } from "@/lib/handytool-types";
 import { defaultLocale, isLocale } from "@/i18n/config";
 
 export interface RecordDraft {
   title: string;
   description: string;
-  values: Record<string, unknown>;
+  values: JsonObject;
   revision?: number;
 }
 export interface RecordFormState {

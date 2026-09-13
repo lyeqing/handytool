@@ -1,4 +1,5 @@
-import type { FieldType, FieldDefinition, ObjectDefinition } from "./handytool-types";
+import type { FieldSettings, FieldSettingKey } from "./field-settings-types";
+import type { FieldType, FieldDefinition, ObjectDefinition, CreateObjectDefinitionRequest, CreateFieldDefinitionRequest } from "./handytool-types";
 import { hasOptions } from "./handytool-types";
 
 /**
@@ -19,7 +20,7 @@ export interface DraftOption {
 export interface DraftField {
   id?: number;
   isActive?: boolean;
-  settings?: Record<string, unknown>;
+  settings?: FieldSettings;
   nameTranslations?: Record<string, string>;
   descriptionTranslations?: Record<string, string>;
   placeholderTranslations?: Record<string, string>;
@@ -80,10 +81,10 @@ function numeric(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function put(
-  target: Record<string, unknown>,
-  key: string,
-  value: number | string | undefined,
+function put<K extends FieldSettingKey>(
+  target: FieldSettings,
+  key: K,
+  value: FieldSettings[K],
 ) {
   if (value !== undefined && value !== "") target[key] = value;
 }
@@ -92,9 +93,9 @@ function put(
  * Only settings that apply to the chosen field type are sent. Dropdown choices are never put in
  * settings - they are relational FieldOption rows.
  */
-export function buildSettings(field: DraftField): Record<string, unknown> {
+export function buildSettings(field: DraftField): FieldSettings {
   if (field.settings) return field.settings;
-  const settings: Record<string, unknown> = {};
+  const settings: FieldSettings = {};
 
   switch (field.fieldType) {
     case "ShortText":
@@ -123,8 +124,8 @@ export function buildSettings(field: DraftField): Record<string, unknown> {
   return settings;
 }
 
-export function toDefinitionPayload(draft: SchemaDraft) {
-  const fieldPayload = (field: DraftField, index: number): Record<string, unknown> => {
+export function toDefinitionPayload(draft: SchemaDraft): CreateObjectDefinitionRequest {
+  const fieldPayload = (field: DraftField, index: number): CreateFieldDefinitionRequest => {
     const settings = { ...buildSettings(field) };
     if (field.fieldType === "Collection") delete settings.itemDefinitionId;
     return {

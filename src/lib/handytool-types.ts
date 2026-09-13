@@ -1,3 +1,4 @@
+import type { FieldSettings, NumericSettingKey, StringSettingKey } from "./field-settings-types";
 /**
  * Mirrors the contracts in the handytool-api project (Contracts/DynamicObjectContracts.cs).
  * The API serialises camelCase JSON with string enums.
@@ -47,7 +48,7 @@ export interface FieldDefinition {
   isRequired: boolean;
   isActive: boolean;
   displayOrder: number;
-  settings: Record<string, unknown>;
+  settings: FieldSettings;
   options: FieldOption[];
 }
 
@@ -80,9 +81,57 @@ export interface ObjectRecord {
   createdByUserId?: number | null;
   title?: string | null;
   description: string | null;
-  values: Record<string, unknown>;
+  values: JsonObject;
   createdDate: string;
   modifiedDate: string;
+}
+
+
+/** JSON request contracts matching Contracts/DynamicObjectContracts.cs in the API. */
+export interface CreateFieldOptionRequest {
+  value: string;
+  label: string;
+  displayOrder?: number;
+  labelTranslations?: Record<string, string> | null;
+  id?: number | null;
+  isActive?: boolean;
+}
+
+export interface CreateFieldDefinitionRequest {
+  key: string;
+  name: string;
+  fieldType: FieldType;
+  description?: string | null;
+  isRequired?: boolean;
+  displayOrder?: number;
+  /** Settings vary by field type and are validated by the API. */
+  settings?: FieldSettings | null;
+  options?: CreateFieldOptionRequest[] | null;
+  nameTranslations?: Record<string, string> | null;
+  descriptionTranslations?: Record<string, string> | null;
+  placeholderTranslations?: Record<string, string> | null;
+  item?: CreateFieldDefinitionRequest | null;
+  id?: number | null;
+  isActive?: boolean;
+}
+
+export interface CreateObjectDefinitionRequest {
+  name: string;
+  description?: string | null;
+  fields?: CreateFieldDefinitionRequest[] | null;
+  nameTranslations?: Record<string, string> | null;
+  descriptionTranslations?: Record<string, string> | null;
+  masterCategoryId?: number;
+  subcategoryId?: number | null;
+  visibility?: ObjectDefinition["visibility"];
+  requiredAccessLevel?: number;
+}
+
+export interface EditObjectDefinitionRequest {
+  definition: CreateObjectDefinitionRequest;
+  /** ISO 8601 timestamp originally loaded from the API, used to detect stale edits. */
+  modifiedDate: string;
+  isActive?: boolean;
 }
 
 /** One structured failure: `{ fieldKey, errorCode, message }`. */
@@ -100,17 +149,31 @@ export interface ValidationErrorResponse {
 
 /** Numeric setting helper - settings arrive as untyped jsonb. */
 export function numberSetting(
-  settings: Record<string, unknown>,
-  name: string,
+  settings: FieldSettings,
+  name: NumericSettingKey,
 ): number | undefined {
   const value = settings[name];
   return typeof value === "number" ? value : undefined;
 }
 
 export function stringSetting(
-  settings: Record<string, unknown>,
-  name: string,
+  settings: FieldSettings,
+  name: StringSettingKey,
 ): string | undefined {
   const value = settings[name];
   return typeof value === "string" ? value : undefined;
+}
+
+/** JSON-compatible record data. Missing fields are omitted, rather than stored as undefined. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
+export interface JsonObject { [key: string]: JsonValue }
+
+export interface CreateObjectRecordRequest {
+  title?: string | null;
+  description?: string | null;
+  values: JsonObject;
+  visibility?: ObjectRecord["visibility"];
+}
+export interface UpdateObjectRecordRequest extends CreateObjectRecordRequest {
+  revision: number;
 }

@@ -1,3 +1,5 @@
+import type { AuthenticatedResponse, UserResponse } from "./auth-types";
+import type { AdminSaveRequest } from "./admin-types";
 import type { RegistrationPayload } from "./registration-types";
 import "server-only";
 import { cache } from "react";
@@ -5,6 +7,10 @@ import type { HomeData } from "./home-types";
 import { cookies } from "next/headers";
 import type {
   ObjectDefinition,
+  CreateObjectDefinitionRequest,
+  EditObjectDefinitionRequest,
+  CreateObjectRecordRequest,
+  UpdateObjectRecordRequest,
   ObjectRecord,
   ValidationErrorResponse,
 } from "./handytool-types";
@@ -171,7 +177,7 @@ function withLanguage(path: string, language?: string): string {
 }
 
 export function createDefinition(
-  payload: unknown,
+  payload: CreateObjectDefinitionRequest,
 ): Promise<ApiResult<ObjectDefinition>> {
   return request<ObjectDefinition>("/api/object-definitions", {
     method: "POST",
@@ -181,7 +187,7 @@ export function createDefinition(
 
 export function createRecord(
   definitionId: number,
-  payload: unknown,
+  payload: CreateObjectRecordRequest,
 ): Promise<ApiResult<ObjectRecord>> {
   return request<ObjectRecord>(
     `/api/object-definitions/${definitionId}/records`,
@@ -218,16 +224,16 @@ export function getHome(language: string, category?: number, subcategory?: numbe
   if (subcategory !== undefined) query.set("subcategoryId", String(subcategory));
   return request<HomeData>(`/api/home?${query}`);
 }
-export const getCurrentUser = cache(() => request<{ id: number; displayName: string; email: string; isSuperAdmin: boolean; companyRole?: "Owner" | "Admin" | "Member" | null; companyName?: string | null }>("/api/auth/me"));
+export const getCurrentUser = cache(() => request<UserResponse>("/api/auth/me"));
 export function authenticate(email: string, password: string) {
-  return request<unknown>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password, clientType: "Web", deviceName: "Handytool web" }) });
+  return request<AuthenticatedResponse>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password, clientType: "Web", deviceName: "Handytool web" }) });
 }
-export function logout() { return request<unknown>("/api/auth/logout", { method: "POST" }); }
+export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
 export function getRecord(id: string) {
   return request<ObjectRecord>(`/api/records/${encodeURIComponent(id)}`);
 }
 export function registerAccount(payload: RegistrationPayload) {
-  return request<unknown>("/api/auth/register", {
+  return request<AuthenticatedResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ ...payload, clientType: "Web", deviceName: "Handytool web" }),
   });
@@ -236,20 +242,22 @@ export function listAdmin(section: import("./admin-types").AdminSection, q: stri
  return request<import("./admin-types").AdminPage>(`/api/admin/${section}?${new URLSearchParams({...filters,q,skip:String(skip),sub:String(sub),...(masterCategoryId===undefined?{}:{masterCategoryId:String(masterCategoryId)})})}`);
 }
 export function adminPlans() { return request<import("./admin-types").AdminPlan[]>("/api/admin/plans"); }
-export function saveAdmin(section: import("./admin-types").AdminSection, id: number | null, sub: boolean, payload: Record<string,unknown>) {
- return request<unknown>(`/api/admin/${section}${id===null?"":"/"+encodeURIComponent(id)}?sub=${sub}`,{method:id===null?"POST":"PUT",body:JSON.stringify(payload)});
+export function saveAdmin(input: AdminSaveRequest): Promise<ApiResult<void>> {
+ const { section, id, payload } = input;
+ const sub = input.section === "categories" && input.sub;
+ return request<void>(`/api/admin/${section}${id===null?"":"/"+encodeURIComponent(id)}?sub=${sub}`,{method:id===null?"POST":"PUT",body:JSON.stringify(payload)});
 }
 export function deleteAdminCategory(id: number, sub: boolean, modifiedDate: string) {
- return request<unknown>(`/api/admin/categories/${encodeURIComponent(id)}?${new URLSearchParams({sub:String(sub),modifiedDate})}`, {method:"DELETE"});
+ return request<void>(`/api/admin/categories/${encodeURIComponent(id)}?${new URLSearchParams({sub:String(sub),modifiedDate})}`, {method:"DELETE"});
 }
 export function adminCompanyOptions() { return request<{id:number;name:string}[]>("/api/admin/company-options"); }
 
 export function getDefinitionEditor(id: number) {
   return request<ObjectDefinition>(`/api/object-definitions/${id}/edit`);
 }
-export function updateDefinition(id: number, payload: unknown) {
+export function updateDefinition(id: number, payload: EditObjectDefinitionRequest) {
   return request<ObjectDefinition>(`/api/object-definitions/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }
-export function updateRecord(id: number, payload: unknown) {
+export function updateRecord(id: number, payload: UpdateObjectRecordRequest) {
   return request<ObjectRecord>(`/api/records/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }

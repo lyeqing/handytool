@@ -1,15 +1,15 @@
 "use client";
 import Link from "next/link";
 import { startTransition, useActionState, useId, useState } from "react";
-import { numberSetting, stringSetting, type FieldDefinition, type ObjectRecord } from "@/lib/handytool-types";
+import { numberSetting, stringSetting, type FieldDefinition, type ObjectRecord, type JsonValue, type JsonObject } from "@/lib/handytool-types";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { createRecordAction, type RecordDraft, type RecordFormState } from "./actions";
 import { updateRecordAction } from "../../../../records/[id]/edit/actions";
 
 type Copy = Dictionary["editing"];
-const objectValue = (value: unknown): Record<string, unknown> =>
-  value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-function replace(values: Record<string, unknown>, key: string, value: unknown) {
+const objectValue = (value: JsonValue | undefined): JsonObject =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+function replace(values: JsonObject, key: string, value: JsonValue | undefined) {
   const next = { ...values };
   if (value === undefined) delete next[key]; else next[key] = value;
   return next;
@@ -43,12 +43,12 @@ export function RecordForm({ definitionId, fields, locale, t, initial }: {
   </form>;
 }
 function ObjectInputs({fields,value,onChange,t}: {
-  fields:FieldDefinition[]; value:Record<string,unknown>; onChange:(value:Record<string,unknown>)=>void; t:Copy;
+  fields:FieldDefinition[]; value:JsonObject; onChange:(value:JsonObject)=>void; t:Copy;
 }) {
   return [...fields].filter(f=>f.isActive).sort((a,b)=>a.displayOrder-b.displayOrder).map(field =>
     <ValueInput key={field.id} field={field} value={value[field.key]} onChange={next=>onChange(replace(value,field.key,next))} t={t}/>);
 }
-function ValueInput({field,value,onChange,t}: {field:FieldDefinition;value:unknown;onChange:(value:unknown)=>void;t:Copy}) {
+function ValueInput({field,value,onChange,t}: {field:FieldDefinition;value:JsonValue | undefined;onChange:(value:JsonValue | undefined)=>void;t:Copy}) {
   const id=useId(), settings=field.settings, text=value==null?"":String(value);
   const options=field.options.filter(o=>o.isActive);
   let control: React.ReactNode;

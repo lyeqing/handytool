@@ -8,6 +8,7 @@ import { toDefinitionPayload, type SchemaDraft } from "@/lib/schema-draft";
 export interface SchemaFormState {
   message: string;
   errors: ValidationError[];
+  conflict?: boolean;
   /** The exact JSON that was POSTed, so the page can show what the API received. */
   requestJson: string;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FIELD_SETTING_KEYS, updateSettingFromInput, type FieldSettingKey } from "@/lib/field-settings-types";
 import { startTransition, useActionState, useId, useRef, useState, type ReactNode } from "react";
 import { FIELD_TYPES, hasOptions, type FieldType, type ObjectDefinition } from "@/lib/handytool-types";
 import { buildSettings, emptySchemaDraft, definitionToDraft, emptyField, type DraftField, type SchemaDraft } from "@/lib/schema-draft";
@@ -9,17 +10,7 @@ import { createSchemaAction } from "./actions";
 import { updateSchemaAction } from "../[id]/edit/actions";
 
 type Copy = Dictionary["editing"];
-const settingKeys: Record<FieldType, string[]> = {
-  ShortText: ["minimumLength","maximumLength","placeholder"],
-  LongText: ["minimumLength","maximumLength","placeholder","rows"],
-  Markdown: ["minimumLength","maximumLength","placeholder"],
-  Integer: ["minimum","maximum","step","placeholder"], Decimal: ["minimum","maximum","step","placeholder"],
-  Range: ["minimum","maximum","step"], Date: ["minimumDate","maximumDate"],
-  DateTime: ["minimumDateTime","maximumDateTime"], Time: ["minimumTime","maximumTime","stepSeconds"],
-  Dropdown: ["placeholder"], RadioGroup: [], Boolean: [],
-  Checklist: ["minimumItems","maximumItems"], MultiSelect: ["minimumItems","maximumItems"],
-  Object: ["referencedObjectDefinitionId"], Collection: ["minimumItems","maximumItems"],
-};
+
 
 export function SchemaBuilder({locale,t,initial,definitions=[]}: {
   locale:string; t:Copy; initial?:ObjectDefinition; definitions?:ObjectDefinition[];
@@ -56,8 +47,8 @@ export function SchemaBuilder({locale,t,initial,definitions=[]}: {
       {draft.fields.map((field,index)=><section key={field.uid} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 bg-sky-50/70 px-5 py-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-sm font-semibold text-white shadow-sm">{index+1}</span><h3 className="min-w-0 wrap-break-word font-semibold text-slate-900">{field.name||t.untitledField}</h3></div><span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-sky-700">{t.fieldTypes[field.fieldType]}</span></div><div className="p-5 sm:p-6">
         <FieldEditor field={field} t={t} uid={uid} definitions={definitions.filter(d=>d.id!==initial?.id)} depth={1} onChange={value=>setDraft(current=>({...current,fields:current.fields.map(f=>f.uid===field.uid?value:f)}))}/>
         </div><div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-3 sm:px-6">
-          <button type="button" className="btn-secondary" disabled={index===0} onClick={()=>move(index,-1)}><EditorIcon kind="up"/>{t.moveUp}</button>
-          <button type="button" className="btn-secondary" disabled={index===draft.fields.length-1} onClick={()=>move(index,1)}><EditorIcon kind="down"/>{t.moveDown}</button>
+          <button type="button" className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40" disabled={index===0} onClick={()=>move(index,-1)}><EditorIcon kind="up"/>{t.moveUp}</button>
+          <button type="button" className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40" disabled={index===draft.fields.length-1} onClick={()=>move(index,1)}><EditorIcon kind="down"/>{t.moveDown}</button>
           {!field.id && <button type="button" className="btn-secondary text-red-700 hover:bg-red-50 sm:ml-auto" onClick={()=>setDraft({...draft,fields:draft.fields.filter(f=>f.uid!==field.uid)})}><EditorIcon kind="remove"/>{t.remove}</button>}
         </div>
       </section>)}
@@ -99,6 +90,7 @@ function FieldEditor({field,t,uid,definitions,depth,onChange}:{
 }) {
   const set=(patch:Partial<DraftField>)=>onChange({...field,...patch});
   const settings=buildSettings(field);
+  const settingKeys: FieldSettingKey[] = FIELD_SETTING_KEYS[field.fieldType];
   const keyHintId = useId();
   return <div className="space-y-5">
     <div className="grid items-start gap-5 sm:grid-cols-2">
@@ -113,18 +105,13 @@ function FieldEditor({field,t,uid,definitions,depth,onChange}:{
     <div className="flex flex-wrap gap-3 rounded-xl bg-slate-50 p-3"><label className="flex items-center gap-2"><input className="size-4 accent-sky-600" type="checkbox" checked={field.isRequired} onChange={e=>set({isRequired:e.target.checked})}/>{t.required}</label><label className="flex items-center gap-2"><input className="size-4 accent-sky-600" type="checkbox" checked={field.isActive??true} onChange={e=>set({isActive:e.target.checked})}/>{t.active}</label></div>
     <Disclosure title={t.translations} hint={t.translationsHint} icon="language"><Translations t={t} label={t.name} value={field.nameTranslations} onChange={v=>set({nameTranslations:v})}/>
     <Translations t={t} label={t.description} value={field.descriptionTranslations} onChange={v=>set({descriptionTranslations:v})}/>
-    {settingKeys[field.fieldType].includes("placeholder")&&<Translations t={t} label={t.placeholder} value={field.placeholderTranslations} onChange={v=>set({placeholderTranslations:v})}/>}</Disclosure>
-    {settingKeys[field.fieldType].length>0&&<Disclosure title={t.settings} hint={t.settingsHint} icon="settings" open={field.fieldType==="Object"}><div className="grid items-start gap-4 sm:grid-cols-2">{settingKeys[field.fieldType].map(key=>{
+    {settingKeys.includes("placeholder")&&<Translations t={t} label={t.placeholder} value={field.placeholderTranslations} onChange={v=>set({placeholderTranslations:v})}/>}</Disclosure>
+    {settingKeys.length>0&&<Disclosure title={t.settings} hint={t.settingsHint} icon="settings" open={field.fieldType==="Object"}><div className="grid items-start gap-4 sm:grid-cols-2">{settingKeys.map(key=>{
       const type=key.includes("DateTime")?"datetime-local":key.includes("Date")?"date":key.includes("Time")?"time":key==="placeholder"?"text":"number";
       const raw=settings[key];
       const value=type==="datetime-local"&&typeof raw==="string"?(!Number.isNaN(Date.parse(raw))?new Date(raw).toISOString().replace(/Z$/,""):raw):String(raw??"");
-      const change=(text:string)=>{
-        const updated={...settings};
-        if(text==="")delete updated[key];
-        else updated[key]=type==="number"?Number(text):type==="datetime-local"?text+"Z":text;
-        set({settings:updated});
-      };
-      return <label key={key} className="grid min-w-0 content-start gap-2 text-sm font-medium text-slate-700">{t[key as keyof Copy] as string}
+      const change=(text:string)=>set({settings:updateSettingFromInput(settings,key,text)});
+      return <label key={key} className="grid min-w-0 content-start gap-2 text-sm font-medium text-slate-700">{key==="itemDefinitionId"?t.item:t[key]}
         {key==="referencedObjectDefinitionId"?<select required className="form-input min-w-0 transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-sky-500 focus:outline-none focus:ring-3 focus:ring-sky-100 read-only:bg-slate-50 disabled:bg-slate-100 motion-reduce:transition-none" value={value} onChange={e=>change(e.target.value)}><option value="">{t.none}</option>{value&&!definitions.some(d=>String(d.id)===value)&&<option value={value}>#{value}</option>}{definitions.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
         :<input className="form-input min-w-0 transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-sky-500 focus:outline-none focus:ring-3 focus:ring-sky-100 read-only:bg-slate-50 disabled:bg-slate-100 motion-reduce:transition-none" type={type} step="any" value={value} onChange={e=>change(e.target.value)}/>}
       </label>;
