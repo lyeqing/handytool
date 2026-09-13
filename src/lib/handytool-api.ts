@@ -28,6 +28,7 @@ export type ApiResult<T> =
   | {
       ok: false;
       status: number;
+      code?: string;
       message: string;
       /** Present when the API returned its structured validation envelope. */
       problem: ValidationErrorResponse | null;
@@ -102,8 +103,10 @@ async function request<T>(
 
   let problem: ValidationErrorResponse | null = null;
   let problemTitle: string | null = null;
+  let code: string | undefined;
   try {
     const parsed = JSON.parse(body);
+    if (typeof parsed?.code === "string") code = parsed.code;
     if (typeof parsed?.title === "string") problemTitle = parsed.title;
     if (parsed && Array.isArray(parsed.errors)) {
       problem = parsed as ValidationErrorResponse;
@@ -115,6 +118,7 @@ async function request<T>(
   return {
     ok: false,
     status: response.status,
+    code,
     message: problem?.title ?? problemTitle ?? summarise(body, response.status),
     problem,
   };
@@ -239,3 +243,13 @@ export function deleteAdminCategory(id: number, sub: boolean, modifiedDate: stri
  return request<unknown>(`/api/admin/categories/${encodeURIComponent(id)}?${new URLSearchParams({sub:String(sub),modifiedDate})}`, {method:"DELETE"});
 }
 export function adminCompanyOptions() { return request<{id:number;name:string}[]>("/api/admin/company-options"); }
+
+export function getDefinitionEditor(id: number) {
+  return request<ObjectDefinition>(`/api/object-definitions/${id}/edit`);
+}
+export function updateDefinition(id: number, payload: unknown) {
+  return request<ObjectDefinition>(`/api/object-definitions/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+export function updateRecord(id: number, payload: unknown) {
+  return request<ObjectRecord>(`/api/records/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}

@@ -1,3 +1,4 @@
+import { listDefinitions } from "@/lib/handytool-api";
 import Link from "next/link";
 import { SchemaBuilder } from "./schema-builder";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -19,6 +20,7 @@ export default async function NewSchemaPage({
   const locale = isLocale(lang) ? lang : defaultLocale;
   const t = getDictionary(locale);
 
+  const definitions = await listDefinitions(locale);
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10">
       <Link
@@ -38,7 +40,7 @@ export default async function NewSchemaPage({
       <div className="mt-8">
         {/* The builder redirects to the new schema after saving, and needs the locale to stay in
             the same language on the way there. */}
-        <SchemaBuilder locale={locale} />
+        <SchemaBuilder locale={locale} t={t.editing} definitions={definitions.ok ? definitions.data : []} />
       </div>
     </div>
   );

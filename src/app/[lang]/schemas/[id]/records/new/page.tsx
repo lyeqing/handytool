@@ -68,7 +68,8 @@ export default async function NewRecordPage(
       </p>
 
       <div className="mt-8">
-        <RecordForm definitionId={definition.id} fields={fields} />
+        {definition.canEdit && <Link className="btn-secondary mb-6" href={`/${locale}/schemas/${definition.id}/edit`}>{t.editing.editDefinition}</Link>}
+        <RecordForm locale={locale} t={t.editing} definitionId={definition.id} fields={fields} />
       </div>
     </div>
   );

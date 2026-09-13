@@ -1,428 +1,119 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
-import { FIELD_TYPES, hasOptions, type FieldType } from "@/lib/handytool-types";
-import {
-  customerSchemaDraft,
-  emptyField,
-  type DraftField,
-  type DraftOption,
-  type SchemaDraft,
-} from "@/lib/schema-draft";
-import { createSchemaAction, type SchemaFormState } from "./actions";
+import Link from "next/link";
+import { startTransition, useActionState, useRef, useState } from "react";
+import { FIELD_TYPES, hasOptions, type FieldType, type ObjectDefinition } from "@/lib/handytool-types";
+import { buildSettings, customerSchemaDraft, definitionToDraft, emptyField, type DraftField, type SchemaDraft } from "@/lib/schema-draft";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import { createSchemaAction } from "./actions";
+import { updateSchemaAction } from "../[id]/edit/actions";
 
-const label = "block text-xs font-medium text-zinc-500 dark:text-zinc-400";
-const input =
-  "w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+type Copy = Dictionary["editing"];
+const settingKeys: Record<FieldType, string[]> = {
+  ShortText: ["minimumLength","maximumLength","placeholder"],
+  LongText: ["minimumLength","maximumLength","placeholder","rows"],
+  Markdown: ["minimumLength","maximumLength","placeholder"],
+  Integer: ["minimum","maximum","step","placeholder"], Decimal: ["minimum","maximum","step","placeholder"],
+  Range: ["minimum","maximum","step"], Date: ["minimumDate","maximumDate"],
+  DateTime: ["minimumDateTime","maximumDateTime"], Time: ["minimumTime","maximumTime","stepSeconds"],
+  Dropdown: ["placeholder"], RadioGroup: [], Boolean: [],
+  Checklist: ["minimumItems","maximumItems"], MultiSelect: ["minimumItems","maximumItems"],
+  Object: ["referencedObjectDefinitionId"], Collection: ["minimumItems","maximumItems"],
+};
 
-/** Deterministic ids for the seeded draft so server and client render identically. */
-function seedUid() {
-  let n = 0;
-  return () => `seed-${++n}`;
-}
-
-export function SchemaBuilder({ locale }: { locale: string }) {
-  // bind, so the server action redirects into the language the reader is already in.
-  const [state, submit, pending] = useActionState<
-    SchemaFormState | null,
-    SchemaDraft
-  >(createSchemaAction.bind(null, locale), null);
-
-  const [draft, setDraft] = useState<SchemaDraft>(() =>
-    customerSchemaDraft(seedUid()),
+export function SchemaBuilder({locale,t,initial,definitions=[]}: {
+  locale:string; t:Copy; initial?:ObjectDefinition; definitions?:ObjectDefinition[];
+}) {
+  const next = useRef(0);
+  const uid = () => `field-${++next.current}`;
+  const [draft,setDraft] = useState<SchemaDraft>(() => {
+    let seed=0;
+    return initial ? definitionToDraft(initial) : customerSchemaDraft(() => `seed-${++seed}`);
+  });
+  const [state,submit,pending] = useActionState(
+    initial ? updateSchemaAction.bind(null,locale,initial.id) : createSchemaAction.bind(null,locale), null
   );
-
-  const counter = useRef(0);
-  const uid = () => `new-${++counter.current}`;
-
-  function updateField(fieldUid: string, patch: Partial<DraftField>) {
-    setDraft((current) => ({
-      ...current,
-      fields: current.fields.map((field) =>
-        field.uid === fieldUid ? { ...field, ...patch } : field,
-      ),
-    }));
-  }
-
-  function updateOption(
-    fieldUid: string,
-    optionUid: string,
-    patch: Partial<DraftOption>,
-  ) {
-    setDraft((current) => ({
-      ...current,
-      fields: current.fields.map((field) =>
-        field.uid === fieldUid
-          ? {
-              ...field,
-              options: field.options.map((option) =>
-                option.uid === optionUid ? { ...option, ...patch } : option,
-              ),
-            }
-          : field,
-      ),
-    }));
-  }
-
-  const errorsFor = (key: string) =>
-    (state?.errors ?? []).filter((error) => error.fieldKey === key);
-
-  return (
-    <form
-      className="flex flex-col gap-6"
-      onSubmit={(event) => {
-        event.preventDefault();
-        submit(draft);
-      }}
-    >
-      {state && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-900 dark:bg-red-950/40">
-          <p className="font-medium text-red-800 dark:text-red-300">
-            {state.message}
-          </p>
-          {state.errors.length > 0 && (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-red-700 dark:text-red-400">
-              {state.errors.map((error, index) => (
-                <li key={index}>
-                  <code className="font-mono text-xs">
-                    {error.fieldKey || "(document)"}
-                  </code>{" "}
-                  <span className="text-red-500 dark:text-red-500">
-                    [{error.errorCode}]
-                  </span>{" "}
-                  {error.message}
-                </li>
-              ))}
-            </ul>
-          )}
-          <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-red-700 dark:text-red-400">
-              Request body sent to the API
-            </summary>
-            <pre className="mt-2 overflow-x-auto rounded bg-white p-3 text-xs text-zinc-700 dark:bg-black dark:text-zinc-300">
-              {state.requestJson}
-            </pre>
-          </details>
-        </div>
-      )}
-
-      <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={label} htmlFor="schema-name">
-              Schema name
-            </label>
-            <input
-              id="schema-name"
-              className={input}
-              value={draft.name}
-              onChange={(event) =>
-                setDraft({ ...draft, name: event.target.value })
-              }
-              placeholder="Customer"
-            />
-          </div>
-          <div>
-            <label className={label} htmlFor="schema-description">
-              Description
-            </label>
-            <input
-              id="schema-description"
-              className={input}
-              value={draft.description}
-              onChange={(event) =>
-                setDraft({ ...draft, description: event.target.value })
-              }
-            />
-          </div>
-        </div>
+  const move = (index:number, direction:number) => setDraft(current => {
+    const fields=[...current.fields]; const to=index+direction;
+    [fields[index],fields[to]]=[fields[to],fields[index]];return {...current,fields};
+  });
+  return <form onSubmit={event => { event.preventDefault(); startTransition(() => submit(draft)); }} className="space-y-6">
+    {state && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 wrap-break-word text-red-800">
+      <p>{state.message}</p>
+      <ul>{state.errors.map((e,i)=><li key={i}>{e.fieldKey}: {e.message}</li>)}</ul>
+      {"conflict" in state && state.conflict === true && <button type="button" className="btn-secondary mt-3" onClick={()=>window.location.reload()}>{t.reload}</button>}
+    </div>}
+    <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
+      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <label className="grid gap-2 text-sm font-medium">{t.name}<input required maxLength={200} className="form-input" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
+        <label className="grid gap-2 text-sm font-medium">{t.description}<textarea maxLength={2000} className="form-input" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label>
+        <Translations t={t} label={t.name} value={draft.nameTranslations} onChange={value=>setDraft({...draft,nameTranslations:value})}/>
+        <Translations t={t} label={t.description} value={draft.descriptionTranslations} onChange={value=>setDraft({...draft,descriptionTranslations:value})}/>
+        {initial && <><label className="flex items-center gap-2"><input type="checkbox" checked={draft.isActive??true} onChange={e=>setDraft({...draft,isActive:e.target.checked})}/>{t.active}</label><p className="text-sm text-slate-500">{t.scope}</p></>}
       </section>
-
-      <div className="flex flex-col gap-4">
-        {draft.fields.map((field, index) => (
-          <FieldCard
-            key={field.uid}
-            field={field}
-            index={index}
-            errors={errorsFor(field.key)}
-            onChange={(patch) => updateField(field.uid, patch)}
-            onRemove={() =>
-              setDraft({
-                ...draft,
-                fields: draft.fields.filter((f) => f.uid !== field.uid),
-              })
-            }
-            onAddOption={() =>
-              updateField(field.uid, {
-                options: [
-                  ...field.options,
-                  { uid: uid(), value: "", label: "" },
-                ],
-              })
-            }
-            onChangeOption={(optionUid, patch) =>
-              updateOption(field.uid, optionUid, patch)
-            }
-            onRemoveOption={(optionUid) =>
-              updateField(field.uid, {
-                options: field.options.filter((o) => o.uid !== optionUid),
-              })
-            }
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          onClick={() =>
-            setDraft({ ...draft, fields: [...draft.fields, emptyField(uid())] })
-          }
-        >
-          + Add field
-        </button>
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          {pending ? "Creating…" : "Create schema"}
-        </button>
-
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          POSTs to <code className="font-mono">/api/object-definitions</code>,
-          then jumps to the add-instance page.
-        </span>
-      </div>
-    </form>
-  );
+      <h2 className="text-xl font-semibold">{t.fields}</h2>
+      {initial && <p className="text-sm text-slate-600">{t.stable}</p>}
+      {draft.fields.map((field,index)=><section key={field.uid} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <FieldEditor field={field} t={t} uid={uid} definitions={definitions.filter(d=>d.id!==initial?.id)} depth={1} onChange={value=>setDraft(current=>({...current,fields:current.fields.map(f=>f.uid===field.uid?value:f)}))}/>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" disabled={index===0} onClick={()=>move(index,-1)}>{t.moveUp}</button>
+          <button type="button" className="btn-secondary" disabled={index===draft.fields.length-1} onClick={()=>move(index,1)}>{t.moveDown}</button>
+          {!field.id && <button type="button" className="btn-secondary" onClick={()=>setDraft({...draft,fields:draft.fields.filter(f=>f.uid!==field.uid)})}>{t.remove}</button>}
+        </div>
+      </section>)}
+      <button type="button" className="btn-secondary" disabled={draft.fields.length>=512} onClick={()=>setDraft({...draft,fields:[...draft.fields,emptyField(uid())]})}>{t.addField}</button>
+      <div className="flex gap-3"><button className="btn-primary" type="submit">{pending?t.saving:initial?t.save:t.create}</button><Link className="btn-secondary" href={initial?`/${locale}/schemas/${initial.id}/records/new`:`/${locale}`}>{t.cancel}</Link></div>
+    </fieldset>
+  </form>;
 }
 
-function FieldCard({
-  field,
-  index,
-  errors,
-  onChange,
-  onRemove,
-  onAddOption,
-  onChangeOption,
-  onRemoveOption,
-}: {
-  field: DraftField;
-  index: number;
-  errors: { errorCode: string; message: string }[];
-  onChange: (patch: Partial<DraftField>) => void;
-  onRemove: () => void;
-  onAddOption: () => void;
-  onChangeOption: (optionUid: string, patch: Partial<DraftOption>) => void;
-  onRemoveOption: (optionUid: string) => void;
-}) {
-  return (
-    <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-400">
-          Field {index + 1}
-        </span>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-xs text-zinc-500 hover:text-red-600 dark:text-zinc-400"
-        >
-          Remove
-        </button>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-4">
-        <div>
-          <label className={label}>Key (stored in JSON)</label>
-          <input
-            className={`${input} font-mono`}
-            value={field.key}
-            onChange={(event) => onChange({ key: event.target.value })}
-            placeholder="fullName"
-          />
-        </div>
-        <div>
-          <label className={label}>Label (shown to users)</label>
-          <input
-            className={input}
-            value={field.name}
-            onChange={(event) => onChange({ name: event.target.value })}
-            placeholder="Full Name"
-          />
-        </div>
-        <div>
-          <label className={label}>Type</label>
-          <select
-            className={input}
-            value={field.fieldType}
-            onChange={(event) =>
-              onChange({ fieldType: event.target.value as FieldType })
-            }
-          >
-            {FIELD_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-end pb-1.5">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={field.isRequired}
-              onChange={(event) => onChange({ isRequired: event.target.checked })}
-            />
-            Required
-          </label>
-        </div>
-      </div>
-
-      <FieldSettings field={field} onChange={onChange} />
-
-      {hasOptions(field.fieldType) && (
-        <div className="mt-4 rounded-md bg-zinc-50 p-3 dark:bg-zinc-900/60">
-          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Options — the <code className="font-mono">value</code> is stored in
-            record JSON, the label is only for display.
-          </p>
-          <div className="flex flex-col gap-2">
-            {field.options.map((option) => (
-              <div key={option.uid} className="flex items-center gap-2">
-                <input
-                  className={`${input} font-mono`}
-                  value={option.value}
-                  onChange={(event) =>
-                    onChangeOption(option.uid, { value: event.target.value })
-                  }
-                  placeholder="gold"
-                />
-                <input
-                  className={input}
-                  value={option.label}
-                  onChange={(event) =>
-                    onChangeOption(option.uid, { label: event.target.value })
-                  }
-                  placeholder="Gold"
-                />
-                <button
-                  type="button"
-                  onClick={() => onRemoveOption(option.uid)}
-                  className="shrink-0 px-2 text-xs text-zinc-500 hover:text-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={onAddOption}
-            className="mt-2 text-xs font-medium text-zinc-600 hover:underline dark:text-zinc-300"
-          >
-            + Add option
-          </button>
-        </div>
-      )}
-
-      {errors.length > 0 && (
-        <ul className="mt-3 space-y-1 text-xs text-red-600 dark:text-red-400">
-          {errors.map((error, i) => (
-            <li key={i}>
-              [{error.errorCode}] {error.message}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+function Translations({t,label,value={},onChange}:{t:Copy;label:string;value?:Record<string,string>;onChange:(v:Record<string,string>)=>void}) {
+  return <details className="rounded-lg border border-slate-200 p-3"><summary className="text-sm font-medium">{label} · {t.translations}</summary>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">{(["en","zh-Hans"] as const).map(lang=><label key={lang} className="grid gap-2 text-sm">{lang==="en"?t.english:t.chinese}<input className="form-input" value={value[lang]??""} onChange={e=>onChange({...value,[lang]:e.target.value})}/></label>)}</div>
+  </details>;
 }
 
-function FieldSettings({
-  field,
-  onChange,
-}: {
-  field: DraftField;
-  onChange: (patch: Partial<DraftField>) => void;
+function FieldEditor({field,t,uid,definitions,depth,onChange}:{
+  field:DraftField;t:Copy;uid:()=>string;definitions:ObjectDefinition[];depth:number;onChange:(value:DraftField)=>void;
 }) {
-  const numberBox = (
-    key: "minimumLength" | "maximumLength" | "minimum" | "maximum" | "step",
-    text: string,
-  ) => (
-    <div>
-      <label className={label}>{text}</label>
-      <input
-        type="number"
-        className={input}
-        value={field[key]}
-        onChange={(event) => onChange({ [key]: event.target.value })}
-      />
+  const set=(patch:Partial<DraftField>)=>onChange({...field,...patch});
+  const settings=buildSettings(field);
+  return <div className="space-y-4">
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="grid min-w-0 gap-2 text-sm">{t.key}<input required pattern="[A-Za-z][A-Za-z0-9_]{0,99}" readOnly={!!field.id} className="form-input" value={field.key} onChange={e=>set({key:e.target.value})}/></label>
+      <label className="grid min-w-0 gap-2 text-sm">{t.name}<input required maxLength={200} className="form-input" value={field.name} onChange={e=>set({name:e.target.value})}/></label>
+      <label className="grid min-w-0 gap-2 text-sm">{t.type}<select disabled={!!field.id} className="form-input" value={field.fieldType} onChange={e=>{
+        const fieldType=e.target.value as FieldType;
+        set({fieldType,settings:{},options:[],item:fieldType==="Collection"?{...emptyField(uid()),key:"item",name:t.item}:undefined});
+      }}>{FIELD_TYPES.map(type=><option key={type} value={type} disabled={depth>=8&&(type==="Collection"||type==="Object")}>{t.fieldTypes[type]}</option>)}</select></label>
+      <label className="grid gap-2 text-sm">{t.description}<input maxLength={2000} className="form-input" value={field.description} onChange={e=>set({description:e.target.value})}/></label>
     </div>
-  );
-
-  const dateBox = (key: "minimumDate" | "maximumDate", text: string) => (
-    <div>
-      <label className={label}>{text}</label>
-      <input
-        type="date"
-        className={input}
-        value={field[key]}
-        onChange={(event) => onChange({ [key]: event.target.value })}
-      />
-    </div>
-  );
-
-  let boxes: React.ReactNode = null;
-
-  switch (field.fieldType) {
-    case "ShortText":
-    case "LongText":
-      boxes = (
-        <>
-          {numberBox("minimumLength", "minimumLength")}
-          {numberBox("maximumLength", "maximumLength")}
-        </>
-      );
-      break;
-    case "Integer":
-    case "Decimal":
-      boxes = (
-        <>
-          {numberBox("minimum", "minimum")}
-          {numberBox("maximum", "maximum")}
-        </>
-      );
-      break;
-    case "Range":
-      boxes = (
-        <>
-          {numberBox("minimum", "minimum")}
-          {numberBox("maximum", "maximum")}
-          {numberBox("step", "step")}
-        </>
-      );
-      break;
-    case "Date":
-      boxes = (
-        <>
-          {dateBox("minimumDate", "minimumDate")}
-          {dateBox("maximumDate", "maximumDate")}
-        </>
-      );
-      break;
-    default:
-      return null;
-  }
-
-  return (
-    <div className="mt-4">
-      <p className="mb-2 text-xs text-zinc-400">
-        settings (stored as jsonb on the field definition)
-      </p>
-      <div className="grid gap-4 sm:grid-cols-4">{boxes}</div>
-    </div>
-  );
+    <div className="flex gap-4"><label className="flex items-center gap-2"><input type="checkbox" checked={field.isRequired} onChange={e=>set({isRequired:e.target.checked})}/>{t.required}</label><label className="flex items-center gap-2"><input type="checkbox" checked={field.isActive??true} onChange={e=>set({isActive:e.target.checked})}/>{t.active}</label></div>
+    <Translations t={t} label={t.name} value={field.nameTranslations} onChange={v=>set({nameTranslations:v})}/>
+    <Translations t={t} label={t.description} value={field.descriptionTranslations} onChange={v=>set({descriptionTranslations:v})}/>
+    {settingKeys[field.fieldType].includes("placeholder")&&<Translations t={t} label={t.placeholder} value={field.placeholderTranslations} onChange={v=>set({placeholderTranslations:v})}/>}
+    <div className="grid gap-3 sm:grid-cols-2">{settingKeys[field.fieldType].map(key=>{
+      const type=key.includes("DateTime")?"datetime-local":key.includes("Date")?"date":key.includes("Time")?"time":key==="placeholder"?"text":"number";
+      const raw=settings[key];
+      const value=type==="datetime-local"&&typeof raw==="string"?(!Number.isNaN(Date.parse(raw))?new Date(raw).toISOString().replace(/Z$/,""):raw):String(raw??"");
+      const change=(text:string)=>{
+        const updated={...settings};
+        if(text==="")delete updated[key];
+        else updated[key]=type==="number"?Number(text):type==="datetime-local"?text+"Z":text;
+        set({settings:updated});
+      };
+      return <label key={key} className="grid min-w-0 gap-2 text-sm">{t[key as keyof Copy] as string}
+        {key==="referencedObjectDefinitionId"?<select required className="form-input" value={value} onChange={e=>change(e.target.value)}><option value="">{t.none}</option>{value&&!definitions.some(d=>String(d.id)===value)&&<option value={value}>#{value}</option>}{definitions.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
+        :<input className="form-input" type={type} step="any" value={value} onChange={e=>change(e.target.value)}/>}
+      </label>;
+    })}</div>
+    {hasOptions(field.fieldType)&&<div className="space-y-3"><h3 className="font-medium">{t.options}</h3>{field.options.map((option,i)=><div key={option.uid} className="space-y-3 rounded-xl border border-slate-200 p-3">
+      <div className="grid gap-3 sm:grid-cols-2"><label className="grid gap-2 text-sm">{t.value}<input required readOnly={!!option.id} className="form-input" value={option.value} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,value:e.target.value}:o)})}/></label>
+      <label className="grid gap-2 text-sm">{t.label}<input required className="form-input" value={option.label} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,label:e.target.value}:o)})}/></label></div>
+      <Translations t={t} label={t.label} value={option.labelTranslations} onChange={v=>set({options:field.options.map((o,n)=>n===i?{...o,labelTranslations:v}:o)})}/>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={option.isActive??true} onChange={e=>set({options:field.options.map((o,n)=>n===i?{...o,isActive:e.target.checked}:o)})}/>{t.active}</label>
+      {!option.id&&<button type="button" className="btn-secondary" onClick={()=>set({options:field.options.filter((_,n)=>n!==i)})}>{t.remove}</button>}
+    </div>)}<button type="button" className="btn-secondary" onClick={()=>set({options:[...field.options,{uid:uid(),value:"",label:""}]})}>{t.addOption}</button></div>}
+    {field.fieldType==="Collection"&&field.item&&depth<8&&<fieldset className="space-y-3 border-l-2 border-sky-200 pl-4"><legend className="px-2 font-semibold">{t.item}</legend><FieldEditor field={field.item} t={t} uid={uid} definitions={definitions} depth={depth+1} onChange={item=>set({item})}/></fieldset>}
+  </div>;
 }

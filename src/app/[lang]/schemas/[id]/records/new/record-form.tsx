@@ -1,288 +1,119 @@
 "use client";
+import Link from "next/link";
+import { startTransition, useActionState, useId, useState } from "react";
+import { numberSetting, stringSetting, type FieldDefinition, type ObjectRecord } from "@/lib/handytool-types";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import { createRecordAction, type RecordDraft, type RecordFormState } from "./actions";
+import { updateRecordAction } from "../../../../records/[id]/edit/actions";
 
-import { useActionState, useState } from "react";
-import {
-  numberSetting,
-  stringSetting,
-  type FieldDefinition,
-} from "@/lib/handytool-types";
-import { createRecordAction, type RecordFormState } from "./actions";
-
-const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
-
-export function RecordForm({
-  definitionId,
-  fields,
-}: {
-  definitionId: number;
-  fields: FieldDefinition[];
-}) {
-  const [state, formAction, pending] = useActionState<
-    RecordFormState | null,
-    FormData
-  >(createRecordAction.bind(null, definitionId), null);
-
-  const errorsFor = (key: string) =>
-    (state?.errors ?? []).filter((error) => error.fieldKey === key);
-
-  const active = fields
-    .filter((field) => field.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
-
-  return (
-    <div className="flex flex-col gap-6">
-      {state && !state.ok && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-900 dark:bg-red-950/40">
-          <p className="font-medium text-red-800 dark:text-red-300">
-            {state.message}
-          </p>
-          {state.errors.length > 0 && (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-red-700 dark:text-red-400">
-              {state.errors.map((error, index) => (
-                <li key={index}>
-                  <code className="font-mono text-xs">
-                    {error.fieldKey || "(document)"}
-                  </code>{" "}
-                  <span className="text-red-500">[{error.errorCode}]</span>{" "}
-                  {error.message}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {state?.ok && (
-        <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
-          <p className="font-medium text-emerald-800 dark:text-emerald-300">
-            {state.message}
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded bg-white p-3 text-xs text-zinc-700 dark:bg-black dark:text-zinc-300">
-            {state.responseJson}
-          </pre>
-        </div>
-      )}
-
-      <form action={formAction} className="flex flex-col gap-5">
-        <section className="grid gap-4 rounded-lg border border-zinc-200 p-4 sm:grid-cols-2 dark:border-zinc-800">
-          <div>
-            <FieldLabel text="Title" hint="relational column" required />
-            <input name="title" className={inputClass} />
-            <FieldErrors errors={errorsFor("title")} />
-          </div>
-          <div>
-            <FieldLabel text="Description" hint="relational column" />
-            <input name="description" className={inputClass} />
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-5 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-400">
-            Everything below is stored in one jsonb column, keyed by field key.
-          </p>
-
-          {active.map((field) => (
-            <div key={field.id}>
-              <FieldLabel
-                text={field.name}
-                hint={`${field.key} · ${field.fieldType}`}
-                required={field.isRequired}
-              />
-              <DynamicInput field={field} />
-              {field.description && (
-                <p className="mt-1 text-xs text-zinc-500">
-                  {field.description}
-                </p>
-              )}
-              <FieldErrors errors={errorsFor(field.key)} />
-            </div>
-          ))}
-        </section>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            {pending ? "Saving…" : "Add instance"}
-          </button>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            Browser-side validation is intentionally off, so the API is what
-            rejects bad input.
-          </span>
-        </div>
-      </form>
-
-      {state && (
-        <details className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-          <summary className="cursor-pointer text-sm text-zinc-600 dark:text-zinc-400">
-            values JSON sent to the API
-          </summary>
-          <pre className="mt-3 overflow-x-auto rounded bg-zinc-50 p-3 text-xs text-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
-            {state.valuesJson}
-          </pre>
-        </details>
-      )}
-    </div>
-  );
+type Copy = Dictionary["editing"];
+const objectValue = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+function replace(values: Record<string, unknown>, key: string, value: unknown) {
+  const next = { ...values };
+  if (value === undefined) delete next[key]; else next[key] = value;
+  return next;
 }
-
-function FieldLabel({
-  text,
-  hint,
-  required,
-}: {
-  text: string;
-  hint?: string;
-  required?: boolean;
+export function RecordForm({ definitionId, fields, locale, t, initial }: {
+  definitionId: number; fields: FieldDefinition[]; locale: string; t: Copy; initial?: ObjectRecord;
 }) {
-  return (
-    <label className="mb-1 flex items-baseline gap-2">
-      <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-        {text}
-      </span>
-      {required && <span className="text-xs text-red-500">required</span>}
-      {hint && (
-        <span className="font-mono text-[11px] text-zinc-400">{hint}</span>
-      )}
-    </label>
-  );
+  const [draft, setDraft] = useState<RecordDraft>(() => ({
+    title: initial?.title ?? "", description: initial?.description ?? "",
+    values: structuredClone(initial?.values ?? {}), revision: initial?.revision,
+  }));
+  const [state, submit, pending] = useActionState<RecordFormState | null, RecordDraft>(
+    initial ? updateRecordAction.bind(null, locale, initial.id) : createRecordAction.bind(null, locale, definitionId), null);
+  return <form onSubmit={event => { event.preventDefault(); startTransition(() => submit(draft)); }} className="space-y-6">
+    {state && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 wrap-break-word text-red-800">
+      <p>{state.message}</p><ul className="mt-2 space-y-1">{state.errors.map((error, index) =>
+        <li key={index}>{error.fieldKey}: {error.message}</li>)}</ul>
+      {state.conflict && <button type="button" className="btn-secondary mt-3" onClick={() => window.location.reload()}>{t.reload}</button>}
+    </div>}
+    <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
+      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <label className="grid gap-2 text-sm font-medium">{t.title}<input className="form-input" maxLength={300} value={draft.title} onChange={e => setDraft({...draft,title:e.target.value})}/></label>
+        <label className="grid gap-2 text-sm font-medium">{t.description}<textarea className="form-input" maxLength={4000} value={draft.description} onChange={e => setDraft({...draft,description:e.target.value})}/></label>
+      </section>
+      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5">
+        <ObjectInputs fields={fields} value={draft.values} t={t} onChange={values => setDraft({...draft,values})}/>
+      </section>
+      <div className="flex flex-wrap gap-3"><button type="submit" className="btn-primary">{pending?t.saving:initial?t.save:t.create}</button>
+        <Link className="btn-secondary" href={initial?`/${locale}/records/${initial.id}`:`/${locale}`}>{t.cancel}</Link></div>
+    </fieldset>
+  </form>;
 }
-
-function FieldErrors({
-  errors,
-}: {
-  errors: { errorCode: string; message: string }[];
+function ObjectInputs({fields,value,onChange,t}: {
+  fields:FieldDefinition[]; value:Record<string,unknown>; onChange:(value:Record<string,unknown>)=>void; t:Copy;
 }) {
-  if (errors.length === 0) return null;
-
-  return (
-    <ul className="mt-1 space-y-0.5 text-xs text-red-600 dark:text-red-400">
-      {errors.map((error, index) => (
-        <li key={index}>
-          [{error.errorCode}] {error.message}
-        </li>
-      ))}
-    </ul>
-  );
+  return [...fields].filter(f=>f.isActive).sort((a,b)=>a.displayOrder-b.displayOrder).map(field =>
+    <ValueInput key={field.id} field={field} value={value[field.key]} onChange={next=>onChange(replace(value,field.key,next))} t={t}/>);
 }
-
-function DynamicInput({ field }: { field: FieldDefinition }) {
-  const name = `field:${field.key}`;
-  const options = field.options.filter((option) => option.isActive);
-
-  switch (field.fieldType) {
-    case "LongText":
-      return <textarea name={name} rows={3} className={inputClass} />;
-
-    case "Integer":
-      return (
-        <input
-          type="number"
-          step={1}
-          name={name}
-          className={inputClass}
-          min={numberSetting(field.settings, "minimum")}
-          max={numberSetting(field.settings, "maximum")}
-        />
-      );
-
-    case "Decimal":
-      return (
-        <input
-          type="number"
-          step="any"
-          name={name}
-          className={inputClass}
-          min={numberSetting(field.settings, "minimum")}
-          max={numberSetting(field.settings, "maximum")}
-        />
-      );
-
+function ValueInput({field,value,onChange,t}: {field:FieldDefinition;value:unknown;onChange:(value:unknown)=>void;t:Copy}) {
+  const id=useId(), settings=field.settings, text=value==null?"":String(value);
+  const options=field.options.filter(o=>o.isActive);
+  let control: React.ReactNode;
+  switch(field.fieldType) {
+    case "Object":
+      control=<div className="space-y-4 border-l-2 border-sky-100 pl-4">
+        {value==null ? <button type="button" className="btn-secondary" onClick={()=>onChange({})}>{t.create}</button>
+        : <ObjectInputs fields={field.fields??[]} value={objectValue(value)} onChange={onChange} t={t}/>}
+      </div>; break;
+    case "Collection": {
+      const items=Array.isArray(value)?value:[];
+      control=<div className="space-y-4 border-l-2 border-sky-100 pl-4">
+        {field.item ? <>{items.map((item,index)=><div key={index} className="space-y-2 rounded-xl border border-slate-200 p-3">
+          <ValueInput field={field.item!} value={item} t={t} onChange={next=>onChange(items.map((old,i)=>i===index?next??null:old))}/>
+          <button type="button" className="btn-secondary" onClick={()=>onChange(items.filter((_,i)=>i!==index))}>{t.remove} {index+1}</button>
+        </div>)}<button type="button" className="btn-secondary" onClick={()=>onChange([...items,field.item?.fieldType==="Object"?{}:field.item?.fieldType==="Collection"?[]:null])}>{t.addItem}</button></>
+        : <p role="alert">{t.unsupported}</p>}
+      </div>;break;
+    }
     case "Boolean":
-      return (
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name={name} />
-          <span className="text-zinc-500">true / false</span>
-        </label>
-      );
-
-    case "Date":
-      return (
-        <input
-          type="date"
-          name={name}
-          className={inputClass}
-          min={stringSetting(field.settings, "minimumDate")}
-          max={stringSetting(field.settings, "maximumDate")}
-        />
-      );
-
-    case "DateTime":
-      return <input type="datetime-local" name={name} className={inputClass} />;
-
+      control=<select id={id} className="form-input" value={value==null?"":String(value)} onChange={e=>onChange(e.target.value===""?undefined:e.target.value==="true")}>
+        <option value="">{t.none}</option><option value="true">{t.yes}</option><option value="false">{t.no}</option>
+      </select>;break;
+    case "Dropdown": case "RadioGroup":
+      control=field.fieldType==="Dropdown"?<select id={id} className="form-input" value={text} onChange={e=>onChange(e.target.value||undefined)}>
+        <option value="">{t.none}</option>{options.map(o=><option key={o.id} value={o.value}>{o.label}</option>)}
+      </select>:<div className="flex flex-wrap gap-4">{options.map(o=><label key={o.id} className="flex items-center gap-2">
+        <input type="radio" name={id} value={o.value} checked={value===o.value} onChange={()=>onChange(o.value)}/>{o.label}</label>)}</div>;break;
+    case "MultiSelect": case "Checklist": {
+      const selected=Array.isArray(value)?value:[];
+      control=<div className="flex flex-wrap gap-4">{options.map(o=><label key={o.id} className="flex items-center gap-2">
+        <input type="checkbox" checked={selected.includes(o.value)} onChange={e=>onChange(e.target.checked?[...selected,o.value]:selected.filter(v=>v!==o.value))}/>{o.label}</label>)}</div>;break;
+    }
+    case "LongText": case "Markdown":
+      control=<textarea id={id} className="form-input" rows={numberSetting(settings,"rows")??4} value={text}
+        placeholder={stringSetting(settings,"placeholder")} onChange={e=>onChange(e.target.value)}/>;break;
     case "Range":
-      return <RangeInput name={name} field={field} />;
-
-    case "Dropdown":
-      return (
-        <select name={name} className={inputClass} defaultValue="">
-          <option value="">— none —</option>
-          {options.map((option) => (
-            <option key={option.id} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      );
-
-    case "MultiSelect":
-      return (
-        <div className="flex flex-wrap gap-4">
-          {options.map((option) => (
-            <label key={option.id} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name={name} value={option.value} />
-              {option.label}
-            </label>
-          ))}
-          {options.length === 0 && (
-            <span className="text-xs text-zinc-500">No active options.</span>
-          )}
-        </div>
-      );
-
+      control=<div className="flex flex-wrap items-center gap-3"><input type="range" className="min-w-0 flex-1 accent-sky-600" aria-label={field.name+" · "+t.fieldTypes.Range}
+        min={numberSetting(settings,"minimum")??0} max={numberSetting(settings,"maximum")??100} step={numberSetting(settings,"step")??1}
+        value={typeof value==="number"?value:numberSetting(settings,"minimum")??0} onChange={e=>onChange(Number(e.target.value))}/>
+        <input id={id} type="number" className="form-input w-28" value={text} step={numberSetting(settings,"step")??1}
+          min={numberSetting(settings,"minimum")} max={numberSetting(settings,"maximum")}
+          onChange={e=>onChange(e.target.value===""?undefined:Number(e.target.value))}/></div>;break;
+    case "Integer": case "Decimal":
+      control=<input id={id} type="number" className="form-input" value={text}
+        step={numberSetting(settings,"step")??(field.fieldType==="Integer"?1:"any")}
+        min={numberSetting(settings,"minimum")} max={numberSetting(settings,"maximum")}
+        onChange={e=>onChange(e.target.value===""?undefined:Number(e.target.value))}/>;break;
+    case "DateTime":
+      // Show UTC explicitly; keep untouched offset strings and fractional precision in draft state.
+      control=<><input id={id} type="datetime-local" step="any" className="form-input"
+        value={text && !Number.isNaN(Date.parse(text))?new Date(text).toISOString().replace(/Z$/,""):text}
+        onChange={e=>onChange(e.target.value?e.target.value+"Z":undefined)}/><p className="mt-1 text-xs text-slate-500">{t.utc}</p></>;break;
+    case "Date": case "Time":
+      control=<input id={id} className="form-input" type={field.fieldType==="Date"?"date":"time"} step={field.fieldType==="Time"?numberSetting(settings,"stepSeconds")??"any":undefined}
+        value={text} onChange={e=>onChange(e.target.value||undefined)}/>;break;
     default:
-      return <input type="text" name={name} className={inputClass} />;
+      control=<input id={id} className="form-input" value={text} placeholder={stringSetting(settings,"placeholder")} onChange={e=>onChange(e.target.value)}/>;
   }
-}
-
-function RangeInput({
-  name,
-  field,
-}: {
-  name: string;
-  field: FieldDefinition;
-}) {
-  const min = numberSetting(field.settings, "minimum") ?? 0;
-  const max = numberSetting(field.settings, "maximum") ?? 100;
-  const step = numberSetting(field.settings, "step") ?? 1;
-  const [value, setValue] = useState(min);
-
-  return (
-    <div className="flex items-center gap-3">
-      <input
-        type="range"
-        name={name}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => setValue(Number(event.target.value))}
-        className="flex-1"
-      />
-      <output className="w-10 text-right font-mono text-sm">{value}</output>
-    </div>
-  );
+  const group=["Object","Collection","RadioGroup","MultiSelect","Checklist"].includes(field.fieldType);
+  return <fieldset className="min-w-0 space-y-2">
+    {group?<legend className="mb-2 text-sm font-medium">{field.name}{field.isRequired&&` · ${t.required}`}</legend>
+      :<label htmlFor={id} className="block text-sm font-medium">{field.name}{field.isRequired&&` · ${t.required}`}</label>}
+    {control}
+    {field.description&&<p className="text-sm text-slate-500">{field.description}</p>}
+    {value!==undefined&&<button type="button" className="text-xs text-sky-700 hover:underline" onClick={()=>onChange(undefined)}>{t.clear}</button>}
+  </fieldset>;
 }

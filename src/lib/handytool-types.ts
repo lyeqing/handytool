@@ -6,6 +6,7 @@
 export const FIELD_TYPES = [
   "ShortText",
   "LongText",
+  "Time", "RadioGroup", "Checklist", "Markdown", "Object", "Collection",
   "Integer",
   "Decimal",
   "Boolean",
@@ -20,10 +21,11 @@ export type FieldType = (typeof FIELD_TYPES)[number];
 
 /** Field types whose allowed values are relational FieldOption rows. */
 export function hasOptions(fieldType: FieldType): boolean {
-  return fieldType === "Dropdown" || fieldType === "MultiSelect";
+  return ["Dropdown", "MultiSelect", "RadioGroup", "Checklist"].includes(fieldType);
 }
 
 export interface FieldOption {
+  labelTranslations?: Record<string, string>;
   id: number;
   value: string;
   label: string;
@@ -32,10 +34,15 @@ export interface FieldOption {
 }
 
 export interface FieldDefinition {
+  nameTranslations?: Record<string, string>;
+  descriptionTranslations?: Record<string, string>;
+  placeholderTranslations?: Record<string, string>;
+  item?: FieldDefinition;
+  fields?: FieldDefinition[];
   id: number;
   key: string;
   name: string;
-  description?: string;
+  description?: string | null;
   fieldType: FieldType;
   isRequired: boolean;
   isActive: boolean;
@@ -45,8 +52,16 @@ export interface FieldDefinition {
 }
 
 export interface ObjectDefinition {
+  canEdit?: boolean;
+  visibility: "Private" | "Company" | "Public";
+  requiredAccessLevel: number;
+  masterCategoryId: number;
+  subcategoryId?: number | null;
+  companyId?: number | null;
+  nameTranslations?: Record<string, string>;
+  descriptionTranslations?: Record<string, string>;
   id: number;
-  userId: number;
+  createdByUserId?: number | null;
   name: string;
   description: string;
   isActive: boolean;
@@ -56,11 +71,15 @@ export interface ObjectDefinition {
 }
 
 export interface ObjectRecord {
+  canEdit?: boolean;
+  revision: number;
+  visibility: "Private" | "Company";
+  companyId?: number | null;
   id: number;
   objectDefinitionId: number;
-  userId: number;
-  title: string;
-  description: string;
+  createdByUserId?: number | null;
+  title?: string | null;
+  description: string | null;
   values: Record<string, unknown>;
   createdDate: string;
   modifiedDate: string;

@@ -1,19 +1,29 @@
-import type { FieldType } from "./handytool-types";
+import type { FieldType, FieldDefinition, ObjectDefinition } from "./handytool-types";
 import { hasOptions } from "./handytool-types";
 
 /**
  * The shape the schema builder keeps in browser state, and the shape the Server Action receives.
- * Everything is a string because it comes straight from form inputs; conversion to the API payload
- * happens in one place, `toDefinitionPayload`.
+ * Existing fields retain IDs, typed settings and translation maps. New field defaults also support
+ * the original string-based seed settings. API payload conversion lives in toDefinitionPayload.
  */
 
 export interface DraftOption {
+  id?: number;
+  isActive?: boolean;
+  labelTranslations?: Record<string, string>;
   uid: string;
   value: string;
   label: string;
 }
 
 export interface DraftField {
+  id?: number;
+  isActive?: boolean;
+  settings?: Record<string, unknown>;
+  nameTranslations?: Record<string, string>;
+  descriptionTranslations?: Record<string, string>;
+  placeholderTranslations?: Record<string, string>;
+  item?: DraftField;
   uid: string;
   key: string;
   name: string;
@@ -31,6 +41,15 @@ export interface DraftField {
 }
 
 export interface SchemaDraft {
+  id?: number;
+  modifiedDate?: string;
+  isActive?: boolean;
+  visibility?: ObjectDefinition["visibility"];
+  requiredAccessLevel?: number;
+  masterCategoryId?: number;
+  subcategoryId?: number | null;
+  nameTranslations?: Record<string, string>;
+  descriptionTranslations?: Record<string, string>;
   name: string;
   description: string;
   fields: DraftField[];
@@ -74,6 +93,7 @@ function put(
  * settings - they are relational FieldOption rows.
  */
 export function buildSettings(field: DraftField): Record<string, unknown> {
+  if (field.settings) return field.settings;
   const settings: Record<string, unknown> = {};
 
   switch (field.fieldType) {
@@ -104,26 +124,39 @@ export function buildSettings(field: DraftField): Record<string, unknown> {
 }
 
 export function toDefinitionPayload(draft: SchemaDraft) {
-  return {
-    name: draft.name.trim(),
-    description: draft.description.trim(),
-    fields: draft.fields.map((field, index) => ({
-      key: field.key.trim(),
-      name: field.name.trim(),
-      description: field.description.trim() || null,
-      fieldType: field.fieldType,
-      isRequired: field.isRequired,
-      displayOrder: index + 1,
-      settings: buildSettings(field),
-      options: hasOptions(field.fieldType)
-        ? field.options.map((option, optionIndex) => ({
-            value: option.value.trim(),
-            label: option.label.trim(),
-            displayOrder: optionIndex + 1,
-          }))
-        : [],
-    })),
+  const fieldPayload = (field: DraftField, index: number): Record<string, unknown> => {
+    const settings = { ...buildSettings(field) };
+    if (field.fieldType === "Collection") delete settings.itemDefinitionId;
+    return {
+      id: field.id, key: field.key.trim(), name: field.name.trim(),
+      description: field.description.trim() || null, fieldType: field.fieldType,
+      isRequired: field.isRequired, isActive: field.isActive ?? true, displayOrder: index + 1,
+      nameTranslations: field.nameTranslations, descriptionTranslations: field.descriptionTranslations,
+      placeholderTranslations: field.placeholderTranslations, settings,
+      item: field.item ? fieldPayload(field.item, 0) : undefined,
+      options: hasOptions(field.fieldType) ? field.options.map((option, i) => ({
+        id: option.id, value: option.value.trim(), label: option.label.trim(),
+        isActive: option.isActive ?? true, displayOrder: i + 1, labelTranslations: option.labelTranslations,
+      })) : [],
+    };
   };
+  return {
+    name: draft.name.trim(), description: draft.description.trim(),
+    visibility: draft.visibility ?? "Private", requiredAccessLevel: draft.requiredAccessLevel ?? 0,
+    masterCategoryId: draft.masterCategoryId ?? -1, subcategoryId: draft.subcategoryId,
+    nameTranslations: draft.nameTranslations, descriptionTranslations: draft.descriptionTranslations,
+    fields: draft.fields.map(fieldPayload),
+  };
+}
+
+export function definitionToDraft(definition: ObjectDefinition): SchemaDraft {
+  const fieldDraft = (field: FieldDefinition): DraftField => ({
+    ...emptyField(String(field.id)), ...field, description: field.description ?? "",
+    uid: String(field.id), settings: { ...field.settings },
+    options: field.options.map(option => ({ ...option, uid: String(option.id) })),
+    item: field.item ? fieldDraft(field.item) : undefined,
+  });
+  return { ...definition, fields: (definition.fields ?? []).map(fieldDraft) };
 }
 
 /** A ready-made "Customer" schema so the page is useful the moment it loads. */
