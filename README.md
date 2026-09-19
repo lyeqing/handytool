@@ -16,6 +16,26 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## End-to-end tests
+
+Install the Chromium browser used by Playwright after installing dependencies:
+
+```bash
+npx playwright install chromium
+```
+
+Run the end-to-end test suite (Playwright starts an isolated Next.js development server automatically):
+
+```bash
+npm run test:e2e
+```
+
+For Playwright's interactive test runner, use:
+
+```bash
+npm run test:e2e:ui
+```
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
